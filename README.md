@@ -20,6 +20,10 @@ Phase 1 では、外部 API や Firebase に依存しない、壊れにくいア
 - GitHub Actions CI
 - Vercel 用設定
 
+## Phase 1.5A の目的
+
+この小さな更新は、GitHub Actions CI が pull request 上で実際に走るかを確認するためのものです。アプリ本体のコードは変更しません。
+
 ## Phase 1 でやらないこと
 
 - Gemini API の本接続
