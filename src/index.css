@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: #eef2f7;
+}
+
+button,
+textarea,
+input {
+  font: inherit;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.lake-bg {
+  background: linear-gradient(175deg, #f2f6fa 0%, #e6ecf3 30%, #dce4ee 50%, #d3dce8 70%, #e0e7f0 100%);
+}
+
+.water-shimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 25% 75%, rgba(147, 197, 253, 0.16), transparent 58%),
+    radial-gradient(ellipse at 75% 55%, rgba(165, 180, 252, 0.12), transparent 55%);
+  animation: water-shimmer 10s ease-in-out infinite;
+}
+
+@keyframes water-shimmer {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.56; transform: scale(1.03); }
+}
+
+.neu-convex-sm {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(243, 247, 251, 0.78));
+  box-shadow:
+    2px 2px 6px rgba(174, 188, 206, 0.2),
+    -2px -2px 6px rgba(255, 255, 255, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.neu-concave {
+  background: linear-gradient(145deg, rgba(230, 236, 244, 0.45), rgba(240, 245, 250, 0.45));
+  box-shadow:
+    inset 2px 2px 6px rgba(174, 188, 206, 0.2),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.neu-pressed {
+  background: linear-gradient(145deg, rgba(224, 230, 238, 0.62), rgba(236, 241, 247, 0.55));
+  box-shadow:
+    inset 2px 2px 6px rgba(163, 177, 198, 0.35),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(247, 250, 253, 0.66));
+  box-shadow:
+    3px 3px 10px rgba(174, 188, 206, 0.2),
+    -3px -3px 10px rgba(255, 255, 255, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.mirror-reflection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -8%;
+  right: -8%;
+  height: 48%;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
+  transform: skewX(-2deg);
+}
