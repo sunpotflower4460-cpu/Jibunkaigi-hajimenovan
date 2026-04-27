@@ -4,27 +4,67 @@ import type { AgentId, Message, ModeId, Reaction } from '../types';
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const agentLead: Record<Exclude<AgentId, 'master'>, string[]> = {
-  soul: ['今、言葉の奥に静かな波があります。', 'その違和感は、まだ名前を持たない声かもしれません。'],
-  creative: ['まだ消えてない火がある。俺にはそこが見える。', 'いいね、その奥にまだ進みたい熱が残ってる。'],
-  strategist: ['今見えている論点は、感情ではなく前提のもつれです。', 'ここは一度、望み・不安・次の一手に分けると見通しが出ます。'],
-  empath: ['うん、そのまま置いて大丈夫です。急いで答えにしなくていい。', 'そこまで抱えてきたこと自体、ちゃんと意味があります。'],
-  critic: ['ちょっと待て。そこ、自分を削ってまで進もうとしてないか。', '甘く見ると苦しくなる。だから今、足場を確認した方がいい。'],
+  soul: [
+    '今の言葉には、まだ名前のついていない気配があります。',
+    'その奥に、静かに残っている本音がありそうです。',
+    '急がなくても、その言葉はもうここに出ています。',
+  ],
+  creative: [
+    'まだ消えてない火がある。そこはかなり大事だと思う。',
+    'いいね、その奥に「進みたい」が残ってる。',
+    '小さくても火は火だよ。そこから始められる。',
+  ],
+  strategist: [
+    'いまは、気持ちと選択肢を少し分けると見えやすくなります。',
+    'ここは一度、望み・不安・次の一手に分けると整理できます。',
+    '問題そのものより、前提が少し絡まっているように見えます。',
+  ],
+  empath: [
+    'うん、そのまま置いて大丈夫です。急いで答えにしなくていい。',
+    'そこまで抱えてきたこと自体、ちゃんと意味があります。',
+    '今は、無理に強くならなくても大丈夫です。',
+  ],
+  critic: [
+    'ちょっと待て。そこ、自分を削ってまで進もうとしてないか。',
+    '甘く見ると苦しくなる。まず足場を確認した方がいい。',
+    '勢いだけで進む前に、守るものを見た方がいい。',
+  ],
 };
 
 const agentQuestion: Record<Exclude<AgentId, 'master'>, string> = {
-  soul: 'その声に、まだ名前をつけないなら、どんな気配ですか？',
-  creative: 'その火を、今日ほんの少しだけ外に出すなら何になる？',
-  strategist: 'いま一番ほどくべき前提は、どれだと思いますか？',
+  soul: 'その気配に名前をつけるなら、どんな言葉になりそうですか？',
+  creative: 'その火を少しだけ外に出すなら、何から始めたい？',
+  strategist: 'いま分けて考えるなら、何と何を分けると楽になりそうですか？',
   empath: '今の自分に、いちばん優しく言ってあげたい言葉は何ですか？',
-  critic: '守るべきものを一つだけ選ぶなら、何だ？',
+  critic: '今いちばん守るべきものは何だと思う？',
 };
 
-const reactionPostures: Record<Exclude<AgentId, 'master'>, string> = {
-  soul: '静観',
-  creative: '点火',
-  strategist: '整理',
-  empath: '抱擁',
-  critic: '警戒',
+const reactionTemplates: Record<Exclude<AgentId, 'master'>, Reaction[]> = {
+  soul: [
+    { posture: '静観', comment: '言葉の奥を見ている' },
+    { posture: '反射', comment: 'まだ言えない声を映している' },
+    { posture: '余白', comment: '急がなくていいと感じている' },
+  ],
+  creative: [
+    { posture: '点火', comment: '残っている火に反応している' },
+    { posture: '前進', comment: '小さく動ける場所を見ている' },
+    { posture: '光', comment: '可能性の方を向いている' },
+  ],
+  strategist: [
+    { posture: '整理', comment: '分けるべき点を見ている' },
+    { posture: '設計', comment: '次の一手を探している' },
+    { posture: '分析', comment: '前提の絡まりを見ている' },
+  ],
+  empath: [
+    { posture: '抱擁', comment: 'そのまま受け止めている' },
+    { posture: '泉', comment: '疲れをほどこうとしている' },
+    { posture: '共感', comment: '小さな本音を守っている' },
+  ],
+  critic: [
+    { posture: '警戒', comment: '無理しすぎを見張っている' },
+    { posture: '防御', comment: '削られない道を探している' },
+    { posture: '現実', comment: '足場を確認している' },
+  ],
 };
 
 export const buildContextText = (messages: Message[], userName: string) => {
@@ -45,6 +85,10 @@ const pick = <T,>(items: T[], seed: string) => {
   return items[code % items.length];
 };
 
+const getLastUserText = (messages: Message[]) => {
+  return [...messages].reverse().find(message => message.role === 'user')?.content || '今の気持ち';
+};
+
 export const generateMockReply = async ({
   agentId,
   mode,
@@ -56,14 +100,13 @@ export const generateMockReply = async ({
   messages: Message[];
   userName: string;
 }) => {
-  await wait(550);
-  const lastUserMessage = [...messages].reverse().find(message => message.role === 'user');
-  const lastText = lastUserMessage?.content || '今の気持ち';
+  await wait(500);
+  const lastText = getLastUserText(messages);
 
   if (agentId === 'master') {
     const userMessages = messages.filter(message => message.role === 'user').slice(-3);
     const fragments = userMessages.map(message => `「${message.content.slice(0, 24)}」`).join('、');
-    return `${userName}さんのここまでの声を映すと、${fragments || 'まだ言葉になっていないもの'}の奥に、同じ問いが流れているように見えます。\n\n答えを急ぐより、今は「何を守りながら進みたいのか」を見てもよさそうです。`;
+    return `${userName}さんのここまでの声を映すと、${fragments || 'まだ言葉になっていないもの'}の奥に、ひとつの流れがあるように見えます。\n\n今は答えを急ぐより、「何を大切にしたいのか」を見てもよさそうです。`;
   }
 
   const lead = pick(agentLead[agentId], lastText);
@@ -74,21 +117,21 @@ export const generateMockReply = async ({
   }
 
   if (mode === 'long') {
-    return `${lead}\n\n${lastText.length > 40 ? 'その言葉は、ただの悩みというより、いくつかの願いが重なって生まれた結び目に見えます。' : 'まだ小さな言葉でも、そこにはちゃんと重さがあります。'}\n\n今すぐ正解にしなくていい。けれど、ここで見ないふりをすると、同じ場所で何度も立ち止まるかもしれません。\n\n${question}`;
+    return `${lead}\n\nその言葉は、ただの悩みというより、願い・不安・大切にしたいものが重なって出てきたものに見えます。\n\n今すぐ全部を決めなくても大丈夫です。まずは、その中で一番強く残っているものを見てみるのがよさそうです。\n\n${question}`;
   }
 
   return `${lead}\n\n今は、全部を決めきるよりも、その奥にある本音を少しだけ見つける時間かもしれません。\n\n${question}`;
 };
 
 export const generateMockReactions = async (selectedAgentId: AgentId): Promise<Partial<Record<AgentId, Reaction>>> => {
-  await wait(250);
+  await wait(220);
   const reactions: Partial<Record<AgentId, Reaction>> = {};
+  const seed = `${selectedAgentId}-${Date.now()}`;
+
   for (const agent of AGENTS) {
     if (agent.id === selectedAgentId) continue;
-    reactions[agent.id] = {
-      posture: reactionPostures[agent.id],
-      comment: `${agent.name}も静かに反応している`,
-    };
+    reactions[agent.id] = pick(reactionTemplates[agent.id], `${seed}-${agent.id}`);
   }
+
   return reactions;
 };
