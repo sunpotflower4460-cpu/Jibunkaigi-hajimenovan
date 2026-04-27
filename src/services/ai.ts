@@ -100,7 +100,7 @@ export const generateMockReply = async ({
   messages: Message[];
   userName: string;
 }) => {
-  await wait(500);
+  await wait(mode === 'short' ? 220 : 340);
   const lastText = getLastUserText(messages);
 
   if (agentId === 'master') {
@@ -124,7 +124,7 @@ export const generateMockReply = async ({
 };
 
 export const generateMockReactions = async (selectedAgentId: AgentId): Promise<Partial<Record<AgentId, Reaction>>> => {
-  await wait(220);
+  await wait(120);
   const reactions: Partial<Record<AgentId, Reaction>> = {};
   const seed = `${selectedAgentId}-${Date.now()}`;
 
