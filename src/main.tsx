@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import AppStable from './AppStable';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { hydrateLocalStorageFromIndexedDb } from './services/storage';
+import { hydrateLocalStorageFromCloud, hydrateLocalStorageFromIndexedDb } from './services/storage';
 import { installPageAutoScroll } from './utils/installPageAutoScroll';
 import './index.css';
 
@@ -20,4 +20,6 @@ const renderApp = () => {
   );
 };
 
-void hydrateLocalStorageFromIndexedDb().finally(renderApp);
+void hydrateLocalStorageFromIndexedDb()
+  .then(hydrateLocalStorageFromCloud)
+  .finally(renderApp);
