@@ -1,8 +1,18 @@
-import type { Message, Session, UserSettings } from '../types';
+import type { AgentId, Message, Reaction, Session, UserSettings } from '../types';
 
 const STORAGE_KEY = 'jibunkaigi_hajimenovan_v1';
 const MAX_SESSIONS = 100;
 const MAX_MESSAGES = 1000;
+
+const AGENT_IDS: Exclude<AgentId, 'master'>[] = ['soul', 'creative', 'strategist', 'empath', 'critic'];
+
+const FALLBACK_REACTIONS: Record<Exclude<AgentId, 'master'>, Reaction> = {
+  soul: { posture: '静観', comment: '静かに映している' },
+  creative: { posture: '点火', comment: 'まだ熱を見ている' },
+  strategist: { posture: '整理', comment: '構造を見ている' },
+  empath: { posture: '抱擁', comment: 'そっと受け止めている' },
+  critic: { posture: '警戒', comment: '足場を見ている' },
+};
 
 export type StoredState = {
   sessions: Session[];
@@ -45,6 +55,35 @@ const sanitizeSession = (value: unknown): Session | null => {
   };
 };
 
+const sanitizeReactions = (value: unknown, ownAgentId?: AgentId): Message['reactions'] | undefined => {
+  const reactions: Partial<Record<AgentId, Reaction>> = {};
+
+  if (isPlainObject(value)) {
+    for (const agentId of AGENT_IDS) {
+      const rawReaction = value[agentId];
+      if (!isPlainObject(rawReaction)) continue;
+      const posture = toSafeString(rawReaction.posture).trim();
+      const comment = toSafeString(rawReaction.comment).trim();
+      if (posture && comment) {
+        reactions[agentId] = {
+          posture: posture.slice(0, 12),
+          comment: comment.slice(0, 40),
+        };
+      }
+    }
+  }
+
+  if (ownAgentId && ownAgentId !== 'master') {
+    for (const agentId of AGENT_IDS) {
+      if (agentId !== ownAgentId && !reactions[agentId]) {
+        reactions[agentId] = FALLBACK_REACTIONS[agentId];
+      }
+    }
+  }
+
+  return Object.keys(reactions).length > 0 ? reactions : undefined;
+};
+
 const sanitizeMessage = (value: unknown, sessionIds: Set<string>): Message | null => {
   if (!isPlainObject(value)) return null;
   const id = toSafeString(value.id).trim();
@@ -54,13 +93,16 @@ const sanitizeMessage = (value: unknown, sessionIds: Set<string>): Message | nul
   if (!id || !sessionId || !sessionIds.has(sessionId) || !content) return null;
   if (role !== 'user' && role !== 'ai') return null;
 
+  const rawAgentId = toSafeString(value.agentId) as AgentId;
+  const agentId = rawAgentId || undefined;
+
   return {
     id,
     sessionId,
     role,
     content,
-    agentId: toSafeString(value.agentId) as Message['agentId'],
-    reactions: isPlainObject(value.reactions) ? (value.reactions as Message['reactions']) : undefined,
+    agentId,
+    reactions: role === 'ai' ? sanitizeReactions(value.reactions, agentId) : undefined,
     createdAt: toSafeNumber(value.createdAt),
   };
 };

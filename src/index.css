@@ -18,6 +18,8 @@
 html,
 body,
 #root {
+  width: 100%;
+  height: 100%;
   min-height: 100%;
   margin: 0;
 }
@@ -33,6 +35,31 @@ input {
   font: inherit;
 }
 
+/*
+ * Mobile scroll stability:
+ * The app uses an internal scroll area. iOS Safari needs a fixed-height shell
+ * plus min-height: 0 on flex children, otherwise the main area can stop
+ * receiving vertical pan gestures and content below the fold becomes unreachable.
+ */
+.lake-bg {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: linear-gradient(175deg, #f2f6fa 0%, #e6ecf3 30%, #dce4ee 50%, #d3dce8 70%, #e0e7f0 100%);
+}
+
+.lake-bg .flex-1 {
+  min-height: 0;
+}
+
+.lake-bg main.no-scrollbar {
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -40,10 +67,6 @@ input {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-.lake-bg {
-  background: linear-gradient(175deg, #f2f6fa 0%, #e6ecf3 30%, #dce4ee 50%, #d3dce8 70%, #e0e7f0 100%);
 }
 
 .water-shimmer {
