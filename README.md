@@ -24,6 +24,8 @@ Phase 1 では、外部 API や Firebase に依存しない、壊れにくいア
 
 この小さな更新は、GitHub Actions CI が pull request 上で実際に走るかを確認するためのものです。アプリ本体のコードは変更しません。
 
+予算設定を更新した後、CIが再実行できるかを確認します。
+
 ## Phase 1 でやらないこと
 
 - Gemini API の本接続
