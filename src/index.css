@@ -45,6 +45,7 @@ input {
 .lake-bg {
   min-height: 100dvh;
   overflow-x: hidden;
+  overflow-y: visible;
   background: linear-gradient(175deg, #f2f6fa 0%, #e6ecf3 30%, #dce4ee 50%, #d3dce8 70%, #e0e7f0 100%);
 }
 
