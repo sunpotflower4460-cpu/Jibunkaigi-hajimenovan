@@ -1,6 +1,10 @@
 import type { AgentId, Message, Reaction, Session, UserSettings } from '../types';
 
 const STORAGE_KEY = 'jibunkaigi_hajimenovan_v1';
+const DB_NAME = 'jibunkaigi_hajimenovan_db';
+const DB_VERSION = 1;
+const STORE_NAME = 'snapshots';
+const APP_STATE_ID = 'app-state';
 const MAX_SESSIONS = 100;
 const MAX_MESSAGES = 1000;
 
@@ -18,6 +22,13 @@ export type StoredState = {
   sessions: Session[];
   messages: Message[];
   settings: UserSettings;
+  savedAt: number;
+};
+
+type IndexedDbRecord = {
+  id: string;
+  state: StoredState;
+  savedAt: number;
 };
 
 const defaultState: StoredState = {
@@ -27,6 +38,7 @@ const defaultState: StoredState = {
     displayName: 'あなた',
     introSeen: false,
   },
+  savedAt: 0,
 };
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
@@ -116,6 +128,96 @@ const sanitizeSettings = (value: unknown): UserSettings => {
   };
 };
 
+const sanitizeState = (value: unknown): StoredState => {
+  if (!isPlainObject(value)) return defaultState;
+  const sessions = (Array.isArray(value.sessions) ? value.sessions : [])
+    .map(sanitizeSession)
+    .filter((session): session is Session => Boolean(session))
+    .slice(0, MAX_SESSIONS);
+  const sessionIds = new Set(sessions.map(session => session.id));
+  const messages = (Array.isArray(value.messages) ? value.messages : [])
+    .map(message => sanitizeMessage(message, sessionIds))
+    .filter((message): message is Message => Boolean(message))
+    .slice(-MAX_MESSAGES);
+
+  return {
+    sessions,
+    messages,
+    settings: sanitizeSettings(value.settings),
+    savedAt: toSafeNumber(value.savedAt, 0),
+  };
+};
+
+const openDatabase = () => new Promise<IDBDatabase>((resolve, reject) => {
+  if (typeof indexedDB === 'undefined') {
+    reject(new Error('IndexedDB is not available'));
+    return;
+  }
+
+  const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+  request.onupgradeneeded = () => {
+    const db = request.result;
+    if (!db.objectStoreNames.contains(STORE_NAME)) {
+      db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+    }
+  };
+
+  request.onsuccess = () => resolve(request.result);
+  request.onerror = () => reject(request.error || new Error('Failed to open IndexedDB'));
+});
+
+const readIndexedDbState = async (): Promise<StoredState | null> => {
+  try {
+    const db = await openDatabase();
+    return await new Promise<StoredState | null>((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.get(APP_STATE_ID);
+
+      request.onsuccess = () => {
+        const record = request.result as IndexedDbRecord | undefined;
+        resolve(record?.state ? sanitizeState(record.state) : null);
+      };
+      request.onerror = () => reject(request.error || new Error('Failed to read IndexedDB'));
+      transaction.oncomplete = () => db.close();
+      transaction.onerror = () => {
+        db.close();
+        reject(transaction.error || new Error('IndexedDB read transaction failed'));
+      };
+    });
+  } catch (error) {
+    console.warn('Failed to read IndexedDB state', error);
+    return null;
+  }
+};
+
+const writeIndexedDbState = async (state: StoredState) => {
+  try {
+    const db = await openDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      store.put({ id: APP_STATE_ID, state, savedAt: state.savedAt } satisfies IndexedDbRecord);
+
+      transaction.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      transaction.onerror = () => {
+        db.close();
+        reject(transaction.error || new Error('IndexedDB write transaction failed'));
+      };
+    });
+  } catch (error) {
+    console.warn('Failed to save IndexedDB state', error);
+  }
+};
+
+const writeLocalStorageState = (state: StoredState) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+};
+
 export const makeId = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID();
@@ -127,32 +229,39 @@ export const loadState = (): StoredState => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState;
-    const parsed = JSON.parse(raw) as Partial<StoredState>;
-    const sessions = (Array.isArray(parsed.sessions) ? parsed.sessions : [])
-      .map(sanitizeSession)
-      .filter((session): session is Session => Boolean(session))
-      .slice(0, MAX_SESSIONS);
-    const sessionIds = new Set(sessions.map(session => session.id));
-    const messages = (Array.isArray(parsed.messages) ? parsed.messages : [])
-      .map(message => sanitizeMessage(message, sessionIds))
-      .filter((message): message is Message => Boolean(message))
-      .slice(-MAX_MESSAGES);
-
-    return {
-      sessions,
-      messages,
-      settings: sanitizeSettings(parsed.settings),
-    };
+    return sanitizeState(JSON.parse(raw));
   } catch (error) {
     console.warn('Failed to load local state', error);
     return defaultState;
   }
 };
 
-export const saveState = (state: StoredState) => {
+export const hydrateLocalStorageFromIndexedDb = async () => {
+  const localState = loadState();
+  const indexedDbState = await readIndexedDbState();
+
+  if (!indexedDbState || indexedDbState.savedAt <= localState.savedAt) return;
+
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    writeLocalStorageState(indexedDbState);
+  } catch (error) {
+    console.warn('Failed to restore localStorage from IndexedDB', error);
+  }
+};
+
+export const saveState = (state: Omit<StoredState, 'savedAt'> | StoredState) => {
+  const nextState: StoredState = {
+    sessions: state.sessions,
+    messages: state.messages,
+    settings: state.settings,
+    savedAt: Date.now(),
+  };
+
+  try {
+    writeLocalStorageState(nextState);
   } catch (error) {
     console.warn('Failed to save local state', error);
   }
+
+  void writeIndexedDbState(nextState);
 };
