@@ -26,6 +26,8 @@ Phase 1 では、外部 API や Firebase に依存しない、壊れにくいア
 
 予算設定を更新した後、CIが再実行できるかを確認します。
 
+Actions budget を更新した後の確認用コミットです。
+
 ## Phase 1 でやらないこと
 
 - Gemini API の本接続
