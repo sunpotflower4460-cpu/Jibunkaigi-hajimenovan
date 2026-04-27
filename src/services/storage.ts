@@ -1,3 +1,4 @@
+import { readCloudSnapshot, writeCloudSnapshot } from './cloudPersistence';
 import type { AgentId, Message, Reaction, Session, UserSettings } from '../types';
 
 const STORAGE_KEY = 'jibunkaigi_hajimenovan_v1';
@@ -128,7 +129,7 @@ const sanitizeSettings = (value: unknown): UserSettings => {
   };
 };
 
-const sanitizeState = (value: unknown): StoredState => {
+export const sanitizeState = (value: unknown): StoredState => {
   if (!isPlainObject(value)) return defaultState;
   const sessions = (Array.isArray(value.sessions) ? value.sessions : [])
     .map(sanitizeSession)
@@ -236,17 +237,32 @@ export const loadState = (): StoredState => {
   }
 };
 
+export const replaceLocalState = (state: StoredState) => {
+  try {
+    writeLocalStorageState(state);
+  } catch (error) {
+    console.warn('Failed to replace localStorage state', error);
+  }
+  void writeIndexedDbState(state);
+};
+
 export const hydrateLocalStorageFromIndexedDb = async () => {
   const localState = loadState();
   const indexedDbState = await readIndexedDbState();
 
   if (!indexedDbState || indexedDbState.savedAt <= localState.savedAt) return;
 
-  try {
-    writeLocalStorageState(indexedDbState);
-  } catch (error) {
-    console.warn('Failed to restore localStorage from IndexedDB', error);
-  }
+  replaceLocalState(indexedDbState);
+};
+
+export const hydrateLocalStorageFromCloud = async () => {
+  const localState = loadState();
+  const cloudSnapshot = await readCloudSnapshot();
+  const cloudState = cloudSnapshot?.state ? sanitizeState(cloudSnapshot.state) : null;
+
+  if (!cloudState || cloudState.savedAt <= localState.savedAt) return;
+
+  replaceLocalState(cloudState);
 };
 
 export const saveState = (state: Omit<StoredState, 'savedAt'> | StoredState) => {
@@ -264,4 +280,5 @@ export const saveState = (state: Omit<StoredState, 'savedAt'> | StoredState) => 
   }
 
   void writeIndexedDbState(nextState);
+  void writeCloudSnapshot(nextState).catch(error => console.warn('Failed to save cloud state', error));
 };
