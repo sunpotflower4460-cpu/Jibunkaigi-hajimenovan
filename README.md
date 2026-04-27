@@ -4,11 +4,9 @@
 
 このリポジトリは、深層版へ進む前に App Store へ出しやすい軽量な初期版を作るためのものです。
 
-## Phase 1 の目的
+## 現在の状態
 
-Phase 1 では、外部 API や Firebase に依存しない、壊れにくいアプリの器を作ります。
-
-- Vite + React + TypeScript の土台
+- Vite + React + TypeScript
 - 日本語UI
 - スマホ優先のレイアウト
 - 5人のエージェント
@@ -20,35 +18,33 @@ Phase 1 では、外部 API や Firebase に依存しない、壊れにくいア
 - GitHub Actions CI
 - Vercel 用設定
 
-## Phase 1.5A の目的
+## Phase 1.5 で完了した安定化
 
-この小さな更新は、GitHub Actions CI が pull request 上で実際に走るかを確認するためのものです。アプリ本体のコードは変更しません。
+### Phase 1.5A: CI実走確認
 
-予算設定を更新した後、CIが再実行できるかを確認します。
+GitHub Actions CI が pull request 上で実際に走り、以下が成功する状態にしました。
 
-Actions budget を更新した後の確認用コミットです。
+- npm install
+- npm run typecheck
+- npm run build
 
-## Phase 1.5B の目的
-
-初期版の本体デバッグとして、起動時クラッシュと端末内保存データの破損に強くします。
+### Phase 1.5B: 起動時・保存データ安定化
 
 - 画面が真っ白にならないよう ErrorBoundary を追加
 - 壊れた localStorage データを読み飛ばす
 - 孤立したメッセージや空データを除外する
 - 保存件数に上限を持たせて初期版の安定性を上げる
 
-## Phase 1.5C の目的
-
-操作中の状態ズレとスマホ操作の安定性を上げます。
+### Phase 1.5C: スマホ操作・生成中状態の安定化
 
 - 生成中のセッション切替・削除・二重操作を抑制
-- 生成開始時のsessionIdを固定し、別セッションへ誤保存しない
+- 生成開始時の sessionId を固定し、別セッションへ誤保存しない
 - 生成中はモード変更や削除操作を止める
-- iPhone下部のsafe-areaに合わせて余白を確保
+- iPhone下部の safe-area に合わせて余白を確保
 - 長い単語や長文メッセージの折り返しを強化
 - 初期版用の安定Appシェルを追加し、既存Appは残して差し戻し可能にする
 
-## Phase 1 でやらないこと
+## 初期版でやらないこと
 
 - Gemini API の本接続
 - Firebase 接続
@@ -69,13 +65,13 @@ npm run build
 
 ## 保存について
 
-Phase 1 では、会話や設定はブラウザの localStorage に保存します。
+初期版では、会話や設定はブラウザの localStorage に保存します。
 
-初回版では、外部DBへ送らずに端末内で完結することで、提出前のリスクを下げています。
+外部DBへ送らずに端末内で完結することで、提出前のリスクを下げています。
 
 ## AI接続について
 
-Phase 1 は mock AI です。
+初期版は mock AI です。
 
 Gemini API などの本接続は Phase 2 以降で、Vercel Serverless Function 経由にします。APIキーをブラウザ側のコードへ置かない方針です。
 
@@ -91,6 +87,10 @@ Gemini API などの本接続は Phase 2 以降で、Vercel Serverless Function 
 - セキュリティルール変更
 - App Store 提出
 - 本番公開の最終判断
+
+## QAチェックリスト
+
+提出前・実機確認前のチェック項目は `docs/qa-checklist.md` を参照してください。
 
 ## ご利用上の注意
 
