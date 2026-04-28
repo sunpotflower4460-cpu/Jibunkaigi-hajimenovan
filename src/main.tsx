@@ -1,8 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import AppStable from './AppStable';
+import { CloudSaveStatusBadge } from './components/CloudSaveStatusBadge';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { hydrateLocalStorageFromIndexedDb } from './services/storage';
+import { fetchCloudState, initCloudSave, isCloudSaveConfigured } from './services/cloud/firebaseCloud';
+import { hydrateLocalStorageFromIndexedDb, loadState, restoreStateToLocalStores } from './services/storage';
 import { installPageAutoScroll } from './utils/installPageAutoScroll';
 import './index.css';
 
@@ -15,9 +17,24 @@ const renderApp = () => {
     <React.StrictMode>
       <ErrorBoundary>
         <AppStable />
+        <CloudSaveStatusBadge />
       </ErrorBoundary>
     </React.StrictMode>,
   );
 };
 
-void hydrateLocalStorageFromIndexedDb().finally(renderApp);
+const hydrateBeforeRender = async () => {
+  await hydrateLocalStorageFromIndexedDb();
+
+  if (!isCloudSaveConfigured()) return;
+
+  await initCloudSave();
+  const cloudState = await fetchCloudState();
+  const localState = loadState();
+
+  if (cloudState && cloudState.savedAt > localState.savedAt) {
+    restoreStateToLocalStores(cloudState);
+  }
+};
+
+void hydrateBeforeRender().finally(renderApp);

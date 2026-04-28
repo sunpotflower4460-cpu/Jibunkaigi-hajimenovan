@@ -1,3 +1,4 @@
+import { scheduleCloudStateSave } from './cloud/firebaseCloud';
 import type { AgentId, Message, Reaction, Session, UserSettings } from '../types';
 
 const STORAGE_KEY = 'jibunkaigi_hajimenovan_v1';
@@ -128,7 +129,7 @@ const sanitizeSettings = (value: unknown): UserSettings => {
   };
 };
 
-const sanitizeState = (value: unknown): StoredState => {
+export const sanitizeStoredState = (value: unknown): StoredState => {
   if (!isPlainObject(value)) return defaultState;
   const sessions = (Array.isArray(value.sessions) ? value.sessions : [])
     .map(sanitizeSession)
@@ -177,7 +178,7 @@ const readIndexedDbState = async (): Promise<StoredState | null> => {
 
       request.onsuccess = () => {
         const record = request.result as IndexedDbRecord | undefined;
-        resolve(record?.state ? sanitizeState(record.state) : null);
+        resolve(record?.state ? sanitizeStoredState(record.state) : null);
       };
       request.onerror = () => reject(request.error || new Error('Failed to read IndexedDB'));
       transaction.oncomplete = () => db.close();
@@ -229,11 +230,21 @@ export const loadState = (): StoredState => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState;
-    return sanitizeState(JSON.parse(raw));
+    return sanitizeStoredState(JSON.parse(raw));
   } catch (error) {
     console.warn('Failed to load local state', error);
     return defaultState;
   }
+};
+
+export const restoreStateToLocalStores = (state: StoredState) => {
+  const nextState = sanitizeStoredState(state);
+  try {
+    writeLocalStorageState(nextState);
+  } catch (error) {
+    console.warn('Failed to restore localStorage state', error);
+  }
+  void writeIndexedDbState(nextState);
 };
 
 export const hydrateLocalStorageFromIndexedDb = async () => {
@@ -242,11 +253,7 @@ export const hydrateLocalStorageFromIndexedDb = async () => {
 
   if (!indexedDbState || indexedDbState.savedAt <= localState.savedAt) return;
 
-  try {
-    writeLocalStorageState(indexedDbState);
-  } catch (error) {
-    console.warn('Failed to restore localStorage from IndexedDB', error);
-  }
+  restoreStateToLocalStores(indexedDbState);
 };
 
 export const saveState = (state: Omit<StoredState, 'savedAt'> | StoredState) => {
@@ -264,4 +271,5 @@ export const saveState = (state: Omit<StoredState, 'savedAt'> | StoredState) => 
   }
 
   void writeIndexedDbState(nextState);
+  scheduleCloudStateSave(nextState);
 };

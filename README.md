@@ -14,6 +14,7 @@
 - 会話履歴
 - セッション一覧
 - 端末内保存
+- 任意のFirebaseクラウド保存
 - mock AI 応答
 - GitHub Actions CI
 - Vercel 用設定
@@ -59,15 +60,28 @@ GitHub Actions CI が pull request 上で実際に走り、以下が成功する
 
 クラウド保存へ進むための設計は `docs/firebase-cloud-save-design.md` にまとめています。
 
-Phase 2AではまだFirebase実接続は行わず、匿名ログイン・Firestore保存構造・端末内保存との同期方針・手動ゲート・セキュリティ方針を固定します。
+Phase 2AではまだFirebase実接続は行わず、匿名ログイン・Firestore保存構造・端末内保存との同期方針・手動ゲート・セキュリティ方針を固定しました。
+
+## Phase 2B: 任意のFirebaseクラウド保存
+
+Firebase環境変数が未設定の場合は、これまで通り端末内保存だけで動きます。
+
+Firebase環境変数が設定されている場合だけ、匿名ログインとFirestore同期を開始します。
+
+- Firebase SDKを追加
+- 未設定時は端末内保存のみ
+- 設定済み時だけ匿名ログイン
+- Firestoreへアプリ状態をdebounce保存
+- 起動時にクラウド側が新しければ端末内へ復元
+- 画面右下に保存状態バッジを表示
+- `.env.example` を追加
+- 手動セットアップ手順は `docs/firebase-manual-setup.md`
 
 ## 初期版でやらないこと
 
 - Gemini API の本接続
-- Firebase 実接続
 - ログインUI
 - 課金
-- 本番DB
 - App Store 提出
 - Node-AI-Z / AETERNA 接続
 
@@ -84,7 +98,7 @@ npm run build
 
 初期版では、会話や設定を localStorage と IndexedDB の両方へ保存します。
 
-外部DBへ送らずに端末内で完結することで、提出前のリスクを下げています。将来的なクラウド保存は Phase 2 以降で扱います。
+Firebase環境変数を登録した場合のみ、Firestoreにも保存します。将来的には、設定画面から保存状態やデータ削除導線を整える予定です。
 
 ## AI接続について
 
@@ -97,9 +111,12 @@ Gemini API などの本接続は Phase 2 以降で、Vercel Serverless Function 
 以下は自動では進めません。
 
 - Gemini API key 作成
+- Firebase project作成
+- Firebase Authentication匿名ログイン有効化
+- Firestore Database作成
+- Firestore rules設定
 - Vercel Environment Variables 登録
-- Firebase / Supabase などの本番接続
-- 認証まわり
+- 認証まわりの本番判断
 - 課金まわり
 - セキュリティルール変更
 - App Store 提出
