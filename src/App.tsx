@@ -81,6 +81,7 @@ const playSound = (type: 'send' | 'receive' | 'click' | 'intro' | 'delete') => {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
     osc.start(now);
     osc.stop(now + 0.22);
+    window.setTimeout(() => void ctx.close().catch(() => undefined), 300);
   } catch {
     // Sound is decorative. Ignore failures on iOS/browser restrictions.
   }
