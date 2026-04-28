@@ -55,11 +55,17 @@ GitHub Actions CI が pull request 上で実際に走り、以下が成功する
 
 注意: これはクラウド同期ではありません。別端末・別ブラウザには引き継がれません。Safariやアプリ内ブラウザのサイトデータを削除した場合、保存データが消える可能性があります。
 
+## Phase 2A: Firebaseクラウド保存の設計
+
+クラウド保存へ進むための設計は `docs/firebase-cloud-save-design.md` にまとめています。
+
+Phase 2AではまだFirebase実接続は行わず、匿名ログイン・Firestore保存構造・端末内保存との同期方針・手動ゲート・セキュリティ方針を固定します。
+
 ## 初期版でやらないこと
 
 - Gemini API の本接続
-- Firebase 接続
-- ログイン
+- Firebase 実接続
+- ログインUI
 - 課金
 - 本番DB
 - App Store 提出
