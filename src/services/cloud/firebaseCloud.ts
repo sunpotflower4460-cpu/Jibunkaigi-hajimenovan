@@ -61,7 +61,9 @@ export const getCloudSaveSnapshot = () => latestSnapshot;
 export const subscribeCloudSaveStatus = (listener: (snapshot: CloudSaveSnapshot) => void) => {
   listeners.add(listener);
   listener(latestSnapshot);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 };
 
 const getStateDocRef = () => {
