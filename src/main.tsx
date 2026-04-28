@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import AppStable from './AppStable';
+import { CloudSaveStatusBadge } from './components/CloudSaveStatusBadge';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { fetchCloudState, initCloudSave, isCloudSaveConfigured } from './services/cloud/firebaseCloud';
 import { hydrateLocalStorageFromIndexedDb, loadState, restoreStateToLocalStores } from './services/storage';
@@ -16,6 +17,7 @@ const renderApp = () => {
     <React.StrictMode>
       <ErrorBoundary>
         <AppStable />
+        <CloudSaveStatusBadge />
       </ErrorBoundary>
     </React.StrictMode>,
   );
