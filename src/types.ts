@@ -28,6 +28,7 @@ export type Message = {
 export type UserSettings = {
   displayName: string;
   introSeen: boolean;
+  termsAccepted: boolean;
 };
 
 export type Agent = {
