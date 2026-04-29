@@ -270,10 +270,16 @@ export const clearLocalState = async () => {
     const db = await openDatabase();
     await new Promise<void>((resolve, reject) => {
       let settled = false;
+      let closed = false;
+      const closeDb = () => {
+        if (closed) return;
+        closed = true;
+        db.close();
+      };
       const finishWithError = (error: Error) => {
         if (settled) return;
         settled = true;
-        db.close();
+        closeDb();
         reject(error);
       };
 
@@ -288,7 +294,7 @@ export const clearLocalState = async () => {
       transaction.oncomplete = () => {
         if (settled) return;
         settled = true;
-        db.close();
+        closeDb();
         resolve();
       };
       transaction.onerror = () => {
