@@ -530,7 +530,7 @@ const AppStable = () => {
             {currentMessages.map(message => {
               const isUser = message.role === 'user';
               return (
-                <article key={message.id} className={`mb-10 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+                <article key={message.id} className={`group mb-10 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
                   {!isUser && <div className="mb-2 ml-1 text-[9px] font-black uppercase tracking-widest text-slate-400">{getAgentName(message.agentId)}</div>}
                   <div onClick={() => setOpenToolbarMsgId(openToolbarMsgId === message.id ? null : message.id)} className={`relative max-w-full cursor-pointer whitespace-pre-wrap break-words rounded-2xl px-5 py-4 text-[15px] leading-relaxed shadow-sm ${isUser ? 'bg-slate-900 text-slate-50 shadow-slate-900/10' : 'mirror-reflection neu-convex-sm text-slate-700'}`}>
                     {message.content}
@@ -573,7 +573,7 @@ const AppStable = () => {
       {showIntro && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-100 p-6">
           <div className="water-shimmer" />
-          <div className="glass-card relative z-10 flex w-full max-w-md flex-col rounded-[2.5rem] p-8 text-center shadow-2xl" style={{ maxHeight: '92dvh' }}>
+          <div className="glass-card relative z-10 flex w-full max-w-md flex-col overflow-y-auto rounded-[2.5rem] p-8 text-center shadow-2xl" style={{ maxHeight: '92dvh' }}>
             <div className="mb-7 inline-flex h-20 w-20 items-center justify-center self-center rounded-[2rem] bg-slate-900 text-white shadow-2xl"><Users size={36} /></div>
             <p className="mb-2 text-[10px] font-black uppercase tracking-[0.35em] text-slate-400">Inner Conference Room</p>
             <h1 className="mb-2 text-4xl font-black tracking-tight text-slate-800">じぶん会議</h1>
@@ -595,9 +595,9 @@ const AppStable = () => {
                 className="mt-0.5 h-4 w-4 shrink-0 accent-slate-800"
               />
               <span>
-                <button type="button" onClick={() => setShowTermsOfUse(true)} className="font-black text-indigo-600 underline underline-offset-2">利用規約</button>
+                <button type="button" onClick={e => { e.stopPropagation(); setShowTermsOfUse(true); }} className="font-black text-indigo-600 underline underline-offset-2">利用規約</button>
                 {' および '}
-                <button type="button" onClick={() => setShowPrivacyPolicy(true)} className="font-black text-indigo-600 underline underline-offset-2">プライバシーポリシー</button>
+                <button type="button" onClick={e => { e.stopPropagation(); setShowPrivacyPolicy(true); }} className="font-black text-indigo-600 underline underline-offset-2">プライバシーポリシー</button>
                 {' を読み、同意します。（12歳以上）'}
               </span>
             </label>
