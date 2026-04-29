@@ -269,21 +269,30 @@ export const clearLocalState = async () => {
   try {
     const db = await openDatabase();
     await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const finishWithError = (error: Error) => {
+        if (settled) return;
+        settled = true;
+        db.close();
+        reject(error);
+      };
+
       const transaction = db.transaction(STORE_NAME, 'readwrite');
       const store = transaction.objectStore(STORE_NAME);
       const request = store.clear();
 
       request.onerror = () => {
-        reject(request.error || new Error('Failed to clear IndexedDB state'));
+        finishWithError(request.error || new Error('Failed to clear IndexedDB state'));
       };
 
       transaction.oncomplete = () => {
+        if (settled) return;
+        settled = true;
         db.close();
         resolve();
       };
       transaction.onerror = () => {
-        db.close();
-        reject(transaction.error || new Error('IndexedDB clear transaction failed'));
+        finishWithError(transaction.error || new Error('IndexedDB clear transaction failed'));
       };
     });
   } catch (error) {
