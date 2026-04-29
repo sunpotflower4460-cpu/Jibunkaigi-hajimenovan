@@ -1,3 +1,5 @@
+// このファイルは旧版/退避用です。現在の起動正本は AppStable.tsx です。
+// This file is the old version / fallback. The current entry point is AppStable.tsx.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,

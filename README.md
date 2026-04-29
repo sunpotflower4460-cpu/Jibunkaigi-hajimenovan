@@ -13,11 +13,13 @@
 - 委ねる / 心の鏡
 - 会話履歴
 - セッション一覧
-- 端末内保存
-- 任意のFirebaseクラウド保存
-- mock AI 応答
-- GitHub Actions CI
+- 端末内保存（localStorage + IndexedDB）
+- **mock AI 応答**（生成AI本接続は今後のフェーズで対応）
+- Firebase環境変数が未設定の場合は端末内保存のみで動作
+- GitHub Actions CI（typecheck / build）
 - Vercel 用設定
+
+**現在の起動正本は `AppStable.tsx` です。**（`App.tsx` は旧版/退避用）
 
 ## Phase 1.5 で完了した安定化
 
@@ -93,6 +95,13 @@ npm run dev
 npm run typecheck
 npm run build
 ```
+
+**CIの必須チェック（現時点）**
+
+- `npm run typecheck` — TypeScript型エラーがないこと
+- `npm run build` — Viteビルドが成功すること
+
+ESLint・Vitestは次フェーズ以降のTODOです。
 
 ## 保存について
 
