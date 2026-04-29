@@ -10,6 +10,51 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* === Design Tokens (Phase H-1) =====================================
+   既存クラス（lake-bg / water-shimmer / neu-* / glass-card / mirror-reflection）
+   の値はここに同じ値で再定義しています。既存クラスはそのまま動作し続けます。
+   将来の Phase で、新規コンポーネントはこの変数を参照してください。
+ */
+:root {
+  /* Surface */
+  --color-paper-base: #eef2f7;
+  --color-paper-0: #f2f6fa;
+  --color-paper-1: #e6ecf3;
+  --color-paper-2: #dce4ee;
+  --color-paper-3: #d3dce8;
+  --color-paper-4: #e0e7f0;
+
+  /* Ink (text / dark surface) */
+  --color-ink: #0f172a;
+  --color-ink-soft: #334155;
+  --color-ink-muted: #64748b;
+  --color-ink-faint: #94a3b8;
+  --color-ink-ghost: #cbd5e1;
+
+  /* Shadows (既存 neu-* / glass-card と完全一致) */
+  --shadow-breath:
+    2px 2px 6px rgba(174, 188, 206, 0.2),
+    -2px -2px 6px rgba(255, 255, 255, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-lift:
+    3px 3px 10px rgba(174, 188, 206, 0.2),
+    -3px -3px 10px rgba(255, 255, 255, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-pressed:
+    inset 2px 2px 6px rgba(163, 177, 198, 0.35),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.5);
+
+  /* Motion */
+  --ease-quiet: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-breath: 180ms;
+  --dur-settle: 320ms;
+
+  /* Radii */
+  --radius-sheet: 2rem;
+  --radius-card: 1.5rem;
+  --radius-pill: 9999px;
+}
+
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
