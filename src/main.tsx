@@ -10,7 +10,12 @@ import './index.css';
 
 installPageAutoScroll();
 
-const root = ReactDOM.createRoot(document.getElementById('root')!);
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Root element #root not found. The HTML document may be corrupt.');
+}
+
+const root = ReactDOM.createRoot(rootElement);
 
 const renderApp = () => {
   root.render(
@@ -23,17 +28,28 @@ const renderApp = () => {
   );
 };
 
+const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error('timeout')), ms)),
+  ]);
+};
+
 const hydrateBeforeRender = async () => {
   await hydrateLocalStorageFromIndexedDb();
 
   if (!isCloudSaveConfigured()) return;
 
-  await initCloudSave();
-  const cloudState = await fetchCloudState();
-  const localState = loadState();
+  try {
+    await withTimeout(initCloudSave(), 6000);
+    const cloudState = await withTimeout(fetchCloudState(), 6000);
+    const localState = loadState();
 
-  if (cloudState && cloudState.savedAt > localState.savedAt) {
-    restoreStateToLocalStores(cloudState);
+    if (cloudState && cloudState.savedAt > localState.savedAt) {
+      restoreStateToLocalStores(cloudState);
+    }
+  } catch {
+    // Cloud hydration timed out or failed. Continue with local state.
   }
 };
 

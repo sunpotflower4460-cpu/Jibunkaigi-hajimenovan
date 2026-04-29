@@ -1,7 +1,7 @@
 import { scheduleCloudStateSave } from './cloud/firebaseCloud';
 import type { AgentId, Message, Reaction, Session, UserSettings } from '../types';
 
-const STORAGE_KEY = 'jibunkaigi_hajimenovan_v1';
+export const STORAGE_KEY = 'jibunkaigi_hajimenovan_v1';
 const DB_NAME = 'jibunkaigi_hajimenovan_db';
 const DB_VERSION = 1;
 const STORE_NAME = 'snapshots';
@@ -106,8 +106,9 @@ const sanitizeMessage = (value: unknown, sessionIds: Set<string>): Message | nul
   if (!id || !sessionId || !sessionIds.has(sessionId) || !content) return null;
   if (role !== 'user' && role !== 'ai') return null;
 
-  const rawAgentId = toSafeString(value.agentId) as AgentId;
-  const agentId = rawAgentId || undefined;
+  const VALID_AGENT_IDS: AgentId[] = ['soul', 'creative', 'strategist', 'empath', 'critic', 'master'];
+  const rawAgentId = toSafeString(value.agentId);
+  const agentId = (VALID_AGENT_IDS as string[]).includes(rawAgentId) ? (rawAgentId as AgentId) : undefined;
 
   return {
     id,

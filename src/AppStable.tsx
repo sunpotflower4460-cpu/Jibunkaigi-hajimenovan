@@ -290,6 +290,10 @@ const AppStable = () => {
       }
 
       if (generationTokenRef.current !== generationToken) return;
+      if (!sessionsRef.current.some(session => session.id === sessionId)) {
+        setErrorMessage('対象の問いが削除されたため、応答を保存しませんでした。');
+        return;
+      }
       setMessages(prev => [...prev, aiMessage]);
       updateSession(sessionId, { updatedAt: Date.now() });
       if (currentSessionIdRef.current === sessionId) {
@@ -401,6 +405,7 @@ const AppStable = () => {
                   <input
                     autoFocus
                     value={editSessionTitle}
+                    maxLength={40}
                     onChange={event => setEditSessionTitle(event.target.value)}
                     onBlur={() => {
                       const title = editSessionTitle.trim().slice(0, 40);
