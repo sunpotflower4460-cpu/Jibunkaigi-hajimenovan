@@ -259,6 +259,53 @@ export const hydrateLocalStorageFromIndexedDb = async () => {
   restoreStateToLocalStores(indexedDbState);
 };
 
+export const clearLocalState = async () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear localStorage state', error);
+  }
+
+  try {
+    const db = await openDatabase();
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      let closed = false;
+      const closeDb = () => {
+        if (closed) return;
+        closed = true;
+        db.close();
+      };
+      const finishWithError = (error: Error) => {
+        if (settled) return;
+        settled = true;
+        closeDb();
+        reject(error);
+      };
+
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.clear();
+
+      request.onerror = () => {
+        finishWithError(request.error || new Error('Failed to clear IndexedDB state'));
+      };
+
+      transaction.oncomplete = () => {
+        if (settled) return;
+        settled = true;
+        closeDb();
+        resolve();
+      };
+      transaction.onerror = () => {
+        finishWithError(transaction.error || new Error('IndexedDB clear transaction failed'));
+      };
+    });
+  } catch (error) {
+    console.warn('Failed to clear IndexedDB state', error);
+  }
+};
+
 export const saveState = (state: Omit<StoredState, 'savedAt'> | StoredState) => {
   const nextState: StoredState = {
     sessions: state.sessions,
