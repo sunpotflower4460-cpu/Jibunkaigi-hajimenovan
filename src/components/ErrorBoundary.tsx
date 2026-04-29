@@ -25,9 +25,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     window.location.reload();
   };
 
-  private handleResetLocalData = async () => {
-    await clearLocalState();
-    window.location.reload();
+  private handleResetLocalData = () => {
+    void clearLocalState().finally(() => {
+      window.location.reload();
+    });
   };
 
   render() {
