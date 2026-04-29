@@ -42,14 +42,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           </div>
           <h1 className="mb-3 text-xl font-black text-slate-800">一時的に読み込みに失敗しました</h1>
           <p className="mb-6 text-sm font-bold leading-relaxed text-slate-500">
-            アプリの表示中に問題が起きました。まずは再読み込みをお試しください。直らない場合は、端末内の保存データをリセットできます。
+            アプリの表示中に問題が起きました。まずは再読み込みをお試しください。直らない場合は、端末内の保存データ（会話・設定）をリセットして開き直せます。
           </p>
           <div className="grid gap-3">
             <button onClick={this.handleReload} className="rounded-2xl bg-slate-900 py-4 text-xs font-black text-white shadow-lg active:scale-[0.98]">
               再読み込みする
             </button>
             <button onClick={this.handleResetLocalData} className="rounded-2xl py-4 text-xs font-black text-rose-500 transition hover:bg-white/50 active:scale-[0.98]">
-              保存データをリセットして開く
+              端末内の保存データをリセットして開く
             </button>
           </div>
         </section>

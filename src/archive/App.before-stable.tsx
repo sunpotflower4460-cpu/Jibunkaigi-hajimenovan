@@ -1,5 +1,3 @@
-// ★ 現在の起動正本はこのファイル（AppStable.tsx）です。
-// ★ App.tsx は旧版/退避用です。誤って編集しないよう注意してください。
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
@@ -7,7 +5,6 @@ import {
   Compass,
   Copy,
   Edit3,
-  ExternalLink,
   Feather,
   Flame,
   Heart,
@@ -15,7 +12,6 @@ import {
   LayoutDashboard,
   Menu,
   MessageSquare,
-  Phone,
   Pin,
   Plus,
   Send,
@@ -30,7 +26,6 @@ import {
   Zap,
 } from 'lucide-react';
 import { AGENTS, MODES, RELEASE_NOTICE } from './data/agents';
-import { CRISIS_RESOURCES, PRIVACY_POLICY, TERMS_OF_USE } from './data/legal';
 import { generateMockReactions, generateMockReply } from './services/ai';
 import { loadState, makeId, saveState } from './services/storage';
 import type { AgentId, Message, ModeId, Session, UserSettings } from './types';
@@ -55,9 +50,14 @@ const iconForAgent = (agentId: AgentId, size = 14) => {
 };
 
 const modeIcon = (mode: ModeId) => {
-  if (mode === 'short') return <Zap size={14} />;
-  if (mode === 'long') return <LayoutDashboard size={14} />;
-  return <MessageSquare size={14} />;
+  switch (mode) {
+    case 'short':
+      return <Zap size={14} />;
+    case 'long':
+      return <LayoutDashboard size={14} />;
+    default:
+      return <MessageSquare size={14} />;
+  }
 };
 
 const getAgentName = (agentId?: AgentId) => {
@@ -93,9 +93,7 @@ declare global {
   }
 }
 
-const modalBackdrop = 'fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/10 p-6 backdrop-blur-md';
-
-const AppStable = () => {
+const App = () => {
   const initialState = useMemo(() => loadState(), []);
   const [sessions, setSessions] = useState<Session[]>(initialState.sessions);
   const [messages, setMessages] = useState<Message[]>(initialState.messages);
@@ -104,12 +102,9 @@ const AppStable = () => {
   const [userInput, setUserInput] = useState('');
   const [selectedMode, setSelectedMode] = useState<ModeId>('medium');
   const [showInput, setShowInput] = useState(true);
-  const [showIntro, setShowIntro] = useState(!initialState.settings.termsAccepted);
-  const [termsChecked, setTermsChecked] = useState(false);
+  const [showIntro, setShowIntro] = useState(!initialState.settings.introSeen);
   const [showBeliefs, setShowBeliefs] = useState(false);
   const [showNotice, setShowNotice] = useState(false);
-  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
-  const [showTermsOfUse, setShowTermsOfUse] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingAgent, setGeneratingAgent] = useState<string | null>(null);
@@ -124,17 +119,6 @@ const AppStable = () => {
   const [expandedReactionsMsgId, setExpandedReactionsMsgId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const sessionsRef = useRef(sessions);
-  const currentSessionIdRef = useRef(currentSessionId);
-  const generationTokenRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    sessionsRef.current = sessions;
-  }, [sessions]);
-
-  useEffect(() => {
-    currentSessionIdRef.current = currentSessionId;
-  }, [currentSessionId]);
 
   useEffect(() => {
     saveState({ sessions, messages, settings });
@@ -161,7 +145,7 @@ const AppStable = () => {
     if (!scrollRef.current) return;
     const timeout = window.setTimeout(() => {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-    }, 90);
+    }, 80);
     return () => window.clearTimeout(timeout);
   }, [currentMessages.length, isGenerating, expandedReactionsMsgId]);
 
@@ -172,10 +156,6 @@ const AppStable = () => {
     textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
   };
 
-  const showBusyMessage = () => {
-    setErrorMessage('いま応答を生成しています。終わってから操作してください。');
-  };
-
   const resetSessionUi = () => {
     setShowInput(true);
     setOpenToolbarMsgId(null);
@@ -184,23 +164,14 @@ const AppStable = () => {
   };
 
   const startNewSession = () => {
-    if (isGenerating) return showBusyMessage();
     setCurrentSessionId(null);
     setIsSidebarOpen(false);
     resetSessionUi();
   };
 
-  const selectSession = (sessionId: string) => {
-    if (isGenerating) return showBusyMessage();
-    setCurrentSessionId(sessionId);
-    setIsSidebarOpen(false);
-    resetSessionUi();
-  };
-
   const handleStartIntro = () => {
-    if (!termsChecked) return;
     playSound('intro');
-    setSettings(prev => ({ ...prev, introSeen: true, termsAccepted: true }));
+    setSettings(prev => ({ ...prev, introSeen: true }));
     setShowIntro(false);
   };
 
@@ -236,40 +207,31 @@ const AppStable = () => {
       updateSession(sessionId, { updatedAt: now });
     }
 
-    setMessages(prev => [
-      ...prev,
-      {
-        id: makeId(),
-        sessionId,
-        role: 'user',
-        content: text,
-        createdAt: now,
-      },
-    ]);
+    const userMessage: Message = {
+      id: makeId(),
+      sessionId,
+      role: 'user',
+      content: text,
+      createdAt: now,
+    };
+
+    setMessages(prev => [...prev, userMessage]);
     setUserInput('');
     setShowInput(false);
     setExpandedReactionsMsgId(null);
-    setOpenToolbarMsgId(null);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
   };
 
   const handleAgentResponse = async (agentId: AgentId) => {
-    const sessionId = currentSessionIdRef.current;
-    if (!sessionId || isGenerating) return;
-
-    const generationToken = makeId();
-    generationTokenRef.current = generationToken;
-    const agentName = getAgentName(agentId);
-    const sessionMessages = messages
-      .filter(message => message.sessionId === sessionId)
-      .sort((a, b) => a.createdAt - b.createdAt);
-
+    if (!currentSessionId || isGenerating) return;
     playSound('click');
+    const agentName = getAgentName(agentId);
+    const sessionMessages = currentMessages;
+
     setIsGenerating(true);
     setGeneratingAgent(agentName);
     setShowInput(false);
     setErrorMessage(null);
-    setOpenToolbarMsgId(null);
 
     try {
       const content = await generateMockReply({
@@ -278,16 +240,9 @@ const AppStable = () => {
         messages: sessionMessages,
         userName: settings.displayName,
       });
-
-      if (generationTokenRef.current !== generationToken) return;
-      if (!sessionsRef.current.some(session => session.id === sessionId)) {
-        setErrorMessage('対象の問いが削除されたため、応答を保存しませんでした。');
-        return;
-      }
-
       const aiMessage: Message = {
         id: makeId(),
-        sessionId,
+        sessionId: currentSessionId,
         role: 'ai',
         content,
         agentId,
@@ -298,50 +253,36 @@ const AppStable = () => {
         aiMessage.reactions = await generateMockReactions(agentId);
       }
 
-      if (generationTokenRef.current !== generationToken) return;
-      if (!sessionsRef.current.some(session => session.id === sessionId)) {
-        setErrorMessage('対象の問いが削除されたため、応答を保存しませんでした。');
-        return;
-      }
       setMessages(prev => [...prev, aiMessage]);
-      updateSession(sessionId, { updatedAt: Date.now() });
-      if (currentSessionIdRef.current === sessionId) {
-        setExpandedReactionsMsgId(agentId !== 'master' ? aiMessage.id : null);
-      }
+      updateSession(currentSessionId, { updatedAt: Date.now() });
+      setExpandedReactionsMsgId(agentId !== 'master' ? aiMessage.id : null);
       playSound('receive');
     } catch (error) {
       console.error(error);
       setErrorMessage('応答の生成に失敗しました。もう一度お試しください。');
       setShowInput(true);
     } finally {
-      if (generationTokenRef.current === generationToken) {
-        generationTokenRef.current = null;
-        setIsGenerating(false);
-        setGeneratingAgent(null);
-      }
+      setIsGenerating(false);
+      setGeneratingAgent(null);
     }
   };
 
   const handleRandomResponse = () => {
-    if (isGenerating) return;
     const randomAgent = AGENTS[Math.floor(Math.random() * AGENTS.length)];
     void handleAgentResponse(randomAgent.id);
   };
 
   const handleDeleteMessage = (messageId: string) => {
-    if (isGenerating) return showBusyMessage();
     playSound('delete');
     setMessages(prev => prev.filter(message => message.id !== messageId));
     setOpenToolbarMsgId(null);
-    if (expandedReactionsMsgId === messageId) setExpandedReactionsMsgId(null);
   };
 
   const handleDeleteSession = (sessionId: string) => {
-    if (isGenerating) return showBusyMessage();
     playSound('delete');
     setMessages(prev => prev.filter(message => message.sessionId !== sessionId));
     setSessions(prev => prev.filter(session => session.id !== sessionId));
-    if (currentSessionIdRef.current === sessionId) {
+    if (currentSessionId === sessionId) {
       setCurrentSessionId(null);
       resetSessionUi();
     }
@@ -364,7 +305,7 @@ const AppStable = () => {
   };
 
   const saveUserName = () => {
-    const nextName = tempName.trim().slice(0, 30);
+    const nextName = tempName.trim();
     if (!nextName) return;
     setSettings(prev => ({ ...prev, displayName: nextName }));
     setIsEditingUserName(false);
@@ -402,27 +343,21 @@ const AppStable = () => {
           <Edit3 size={13} className="text-slate-400" />
         </button>
 
-        <button onClick={startNewSession} disabled={isGenerating} className="mb-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-4 text-xs font-black text-white shadow-xl shadow-slate-900/10 transition active:scale-[0.98] disabled:opacity-40"><Plus size={16} /> 新しい問い</button>
+        <button onClick={startNewSession} className="mb-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-4 text-xs font-black text-white shadow-xl shadow-slate-900/10 transition active:scale-[0.98]"><Plus size={16} /> 新しい問い</button>
 
-        <ul className="no-scrollbar flex-1 list-none space-y-1 overflow-y-auto">
-          {sortedSessions.length === 0 && <li><p className="mt-4 px-4 text-center text-[11px] font-bold text-slate-400">過去の問いはありません</p></li>}
+        <div className="no-scrollbar flex-1 space-y-1 overflow-y-auto">
+          {sortedSessions.length === 0 && <p className="mt-4 px-4 text-center text-[11px] font-bold text-slate-400">過去の問いはありません</p>}
           {sortedSessions.map(session => (
-            <li key={session.id} className={`group flex items-center gap-1 rounded-2xl transition ${currentSessionId === session.id ? 'neu-pressed text-indigo-700' : 'text-slate-500 hover:bg-white/30'} ${isGenerating ? 'opacity-50' : ''}`}>
-              <button
-                disabled={isGenerating}
-                onClick={() => selectSession(session.id)}
-                className="flex min-w-0 flex-1 items-center gap-2 px-4 py-3 text-left disabled:cursor-not-allowed"
-                aria-current={currentSessionId === session.id ? 'page' : undefined}
-              >
+            <div key={session.id} onClick={() => { setCurrentSessionId(session.id); setIsSidebarOpen(false); resetSessionUi(); }} className={`group rounded-2xl px-4 py-3 transition ${currentSessionId === session.id ? 'neu-pressed text-indigo-700' : 'cursor-pointer text-slate-500 hover:bg-white/30'}`}>
+              <div className="flex items-center gap-2">
                 {session.isPinned && <Pin size={11} className="shrink-0 fill-amber-500 text-amber-500" />}
                 {editingSessionId === session.id ? (
                   <input
                     autoFocus
                     value={editSessionTitle}
-                    maxLength={40}
                     onChange={event => setEditSessionTitle(event.target.value)}
                     onBlur={() => {
-                      const title = editSessionTitle.trim().slice(0, 40);
+                      const title = editSessionTitle.trim();
                       if (title) updateSession(session.id, { title });
                       setEditingSessionId(null);
                     }}
@@ -435,42 +370,19 @@ const AppStable = () => {
                 ) : (
                   <span className="min-w-0 flex-1 truncate text-xs font-black">{session.title}</span>
                 )}
-              </button>
-              <div className="flex shrink-0 items-center gap-0.5 pr-2 opacity-100 transition md:opacity-0 md:group-hover:opacity-100">
-                <button
-                  disabled={isGenerating}
-                  className="rounded p-1 hover:text-indigo-600 disabled:cursor-not-allowed"
-                  onClick={() => { if (!isGenerating) { setEditingSessionId(session.id); setEditSessionTitle(session.title); } }}
-                  aria-label={`「${session.title}」のタイトルを編集`}
-                >
-                  <Edit3 size={11} />
-                </button>
-                <button
-                  disabled={isGenerating}
-                  className="rounded p-1 hover:text-amber-500 disabled:cursor-not-allowed"
-                  onClick={() => { if (!isGenerating) updateSession(session.id, { isPinned: !session.isPinned }); }}
-                  aria-label={session.isPinned ? `「${session.title}」のピン留めを外す` : `「${session.title}」をピン留め`}
-                >
-                  <Pin size={11} />
-                </button>
-                <button
-                  disabled={isGenerating}
-                  className="rounded p-1 hover:text-rose-500 disabled:cursor-not-allowed"
-                  onClick={() => { if (!isGenerating) setDeleteTargetId(session.id); }}
-                  aria-label={`「${session.title}」を削除`}
-                >
-                  <Trash2 size={11} />
-                </button>
+                <div className="flex items-center gap-1 opacity-100 transition md:opacity-0 md:group-hover:opacity-100">
+                  <button className="p-1 hover:text-indigo-600" onClick={event => { event.stopPropagation(); setEditingSessionId(session.id); setEditSessionTitle(session.title); }} aria-label="タイトル編集"><Edit3 size={11} /></button>
+                  <button className="p-1 hover:text-amber-500" onClick={event => { event.stopPropagation(); updateSession(session.id, { isPinned: !session.isPinned }); }} aria-label="ピン留め"><Pin size={11} /></button>
+                  <button className="p-1 hover:text-rose-500" onClick={event => { event.stopPropagation(); setDeleteTargetId(session.id); }} aria-label="削除"><Trash2 size={11} /></button>
+                </div>
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
 
         <div className="mt-5 border-t border-white/30 pt-4">
           <button onClick={() => setShowBeliefs(true)} className="flex w-full items-center justify-center gap-2 rounded-xl p-2 text-[11px] font-black text-slate-500 transition hover:bg-white/40 hover:text-slate-800"><Info size={14} /> エージェントの役割</button>
           <button onClick={() => setShowNotice(true)} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl p-2 text-[11px] font-black text-slate-400 transition hover:bg-white/40 hover:text-slate-700"><AlertCircle size={14} /> ご利用について</button>
-          <button onClick={() => setShowPrivacyPolicy(true)} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl p-2 text-[11px] font-black text-slate-400 transition hover:bg-white/40 hover:text-slate-700"><ShieldAlert size={14} /> プライバシーポリシー</button>
-          <button onClick={() => setShowTermsOfUse(true)} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl p-2 text-[11px] font-black text-slate-400 transition hover:bg-white/40 hover:text-slate-700"><Info size={14} /> 利用規約</button>
         </div>
       </aside>
 
@@ -482,7 +394,7 @@ const AppStable = () => {
           </div>
           <div className="neu-concave flex shrink-0 rounded-xl p-1">
             {(Object.keys(MODES) as ModeId[]).map(mode => (
-              <button key={mode} onClick={() => setSelectedMode(mode)} disabled={isGenerating} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-black transition disabled:opacity-40 ${selectedMode === mode ? 'bg-white/70 text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button key={mode} onClick={() => setSelectedMode(mode)} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-black transition ${selectedMode === mode ? 'bg-white/70 text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
                 {modeIcon(mode)} <span className="hidden sm:inline">{MODES[mode].label}</span>
               </button>
             ))}
@@ -496,7 +408,7 @@ const AppStable = () => {
           </div>
         )}
 
-        <section className="relative z-20 px-4 pb-4 pt-4 md:p-6">
+        <section className="relative z-20 p-4 md:p-6">
           <div className="mx-auto flex min-h-[76px] max-w-4xl flex-col justify-center">
             {showInput && !isGenerating ? (
               <div className="flex w-full gap-3">
@@ -540,7 +452,7 @@ const AppStable = () => {
           </div>
         </section>
 
-        <main ref={scrollRef} className="no-scrollbar relative z-10 flex-1 overflow-y-auto px-5 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-2 md:px-10">
+        <main ref={scrollRef} className="no-scrollbar relative z-10 flex-1 overflow-y-auto px-5 pb-28 pt-2 md:px-10">
           <div className="mx-auto max-w-2xl">
             {currentMessages.length === 0 && !isGenerating && showInput && (
               <div className="flex min-h-[52vh] flex-col items-center justify-center py-16 text-center">
@@ -558,11 +470,11 @@ const AppStable = () => {
             {currentMessages.map(message => {
               const isUser = message.role === 'user';
               return (
-                <article key={message.id} className={`group mb-10 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+                <article key={message.id} className={`mb-10 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
                   {!isUser && <div className="mb-2 ml-1 text-[9px] font-black uppercase tracking-widest text-slate-400">{getAgentName(message.agentId)}</div>}
-                  <div onClick={() => setOpenToolbarMsgId(openToolbarMsgId === message.id ? null : message.id)} className={`relative max-w-full cursor-pointer whitespace-pre-wrap break-words rounded-2xl px-5 py-4 text-[15px] leading-relaxed shadow-sm ${isUser ? 'bg-slate-900 text-slate-50 shadow-slate-900/10' : 'mirror-reflection neu-convex-sm text-slate-700'}`}>
+                  <div onClick={() => setOpenToolbarMsgId(openToolbarMsgId === message.id ? null : message.id)} className={`relative max-w-full cursor-pointer whitespace-pre-wrap rounded-2xl px-5 py-4 text-[15px] leading-relaxed shadow-sm ${isUser ? 'bg-slate-900 text-slate-50 shadow-slate-900/10' : 'mirror-reflection neu-convex-sm text-slate-700'}`}>
                     {message.content}
-                    <div className={`absolute right-2 top-2 flex items-center gap-1 rounded-lg p-1 transition-opacity ${isUser ? 'bg-slate-700/70' : 'bg-white/70'} ${openToolbarMsgId === message.id ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'}`} onClick={event => event.stopPropagation()}>
+                    <div className={`absolute right-2 top-2 flex items-center gap-1 rounded-lg p-1 transition-opacity ${isUser ? 'bg-slate-700/70' : 'bg-white/70'} ${openToolbarMsgId === message.id ? 'opacity-100' : 'opacity-0 md:hover:opacity-100 md:group-hover:opacity-100'}`} onClick={event => event.stopPropagation()}>
                       <button onClick={() => void handleCopyMessage(message.id, message.content)} className="p-1 text-slate-400 hover:text-indigo-500" aria-label="コピー">{copiedMsgId === message.id ? <Check size={13} /> : <Copy size={13} />}</button>
                       <button onClick={() => handleDeleteMessage(message.id)} className="p-1 text-slate-400 hover:text-rose-500" aria-label="削除"><Trash2 size={13} /></button>
                     </div>
@@ -579,7 +491,10 @@ const AppStable = () => {
                             return (
                               <div key={agentId} className="flex gap-3 rounded-xl bg-white/60 p-3">
                                 <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${agent.color} ${agent.accentColor} ${agent.borderColor}`}>{iconForAgent(agent.id, 13)}</div>
-                                <div className="min-w-0 flex-1"><div className="mb-1 flex items-center gap-2"><span className="text-[10px] font-black text-slate-700">{agent.name}</span><span className="rounded bg-white/80 px-1.5 py-0.5 text-[8px] font-bold italic text-slate-500">{reaction.posture}</span></div><p className="text-[12px] font-medium leading-relaxed text-slate-600">「{reaction.comment}」</p></div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="mb-1 flex items-center gap-2"><span className="text-[10px] font-black text-slate-700">{agent.name}</span><span className="rounded bg-white/80 px-1.5 py-0.5 text-[8px] font-bold italic text-slate-500">{reaction.posture}</span></div>
+                                  <p className="text-[12px] font-medium leading-relaxed text-slate-600">「{reaction.comment}」</p>
+                                </div>
                               </div>
                             );
                           })}
@@ -592,7 +507,9 @@ const AppStable = () => {
             })}
 
             {!isGenerating && currentMessages.length > 0 && currentMessages[currentMessages.length - 1]?.role === 'ai' && currentMessages[currentMessages.length - 1]?.agentId !== 'master' && userMessageCount >= 3 && (
-              <div className="mb-8 mt-10 flex justify-center"><button onClick={() => void handleAgentResponse('master')} className="glass-card flex items-center gap-4 rounded-2xl px-5 py-4 text-left transition active:scale-[0.98]"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-500"><Compass size={18} /></div><div><p className="text-sm font-black text-slate-700">ここまでの声を映してみますか？</p><p className="text-[10px] font-bold text-slate-400">心の鏡が、散らばった思考を総括します</p></div></button></div>
+              <div className="mb-8 mt-10 flex justify-center">
+                <button onClick={() => void handleAgentResponse('master')} className="glass-card flex items-center gap-4 rounded-2xl px-5 py-4 text-left transition active:scale-[0.98]"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-500"><Compass size={18} /></div><div><p className="text-sm font-black text-slate-700">ここまでの声を映してみますか？</p><p className="text-[10px] font-bold text-slate-400">心の鏡が、散らばった思考を総括します</p></div></button>
+              </div>
             )}
           </div>
         </main>
@@ -601,58 +518,37 @@ const AppStable = () => {
       {showIntro && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-100 p-6">
           <div className="water-shimmer" />
-          <div className="glass-card relative z-10 flex w-full max-w-md flex-col overflow-y-auto rounded-[2.5rem] p-8 text-center shadow-2xl" style={{ maxHeight: '92dvh' }}>
-            <div className="mb-7 inline-flex h-20 w-20 items-center justify-center self-center rounded-[2rem] bg-slate-900 text-white shadow-2xl"><Users size={36} /></div>
+          <div className="glass-card relative z-10 w-full max-w-md rounded-[2.5rem] p-8 text-center shadow-2xl">
+            <div className="mb-7 inline-flex h-20 w-20 items-center justify-center rounded-[2rem] bg-slate-900 text-white shadow-2xl"><Users size={36} /></div>
             <p className="mb-2 text-[10px] font-black uppercase tracking-[0.35em] text-slate-400">Inner Conference Room</p>
             <h1 className="mb-2 text-4xl font-black tracking-tight text-slate-800">じぶん会議</h1>
-            <p className="mb-6 text-sm font-bold text-slate-500">5つの視点で、じぶんに潜る</p>
-            <div className="mb-5 rounded-[2rem] border border-white/60 bg-white/30 p-6 text-center text-lg font-bold leading-loose tracking-widest text-slate-700">導かない。照らすだけ。<br />歩くのは、あなた自身。</div>
-
-            {/* Disclaimer */}
-            <div className="mb-4 rounded-2xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-left text-[11px] font-bold leading-relaxed text-amber-800">
-              <p className="mb-1 flex items-center gap-1.5 font-black"><AlertCircle size={12} /> ご注意</p>
-              <p>{RELEASE_NOTICE}</p>
-            </div>
-
-            {/* Mock AI notice */}
-            <div className="mb-4 rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-left text-[11px] font-bold leading-relaxed text-indigo-800">
-              <p className="mb-1 flex items-center gap-1.5 font-black"><Info size={12} /> この版について</p>
-              <p>この初期版では、5つの視点による簡易応答として動作します。生成AIへの本接続は今後のアップデートで提供予定です。</p>
-            </div>
-
-            {/* Terms consent */}
-            <label className="mb-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-white/60 bg-white/40 px-4 py-3 text-left text-[11px] font-bold text-slate-600">
-              <input
-                type="checkbox"
-                checked={termsChecked}
-                onChange={e => setTermsChecked(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-slate-800"
-              />
-              <span>
-                <button type="button" onClick={e => { e.stopPropagation(); setShowTermsOfUse(true); }} className="font-black text-indigo-600 underline underline-offset-2">利用規約</button>
-                {' および '}
-                <button type="button" onClick={e => { e.stopPropagation(); setShowPrivacyPolicy(true); }} className="font-black text-indigo-600 underline underline-offset-2">プライバシーポリシー</button>
-                {' を読み、同意します。（12歳以上）'}
-              </span>
-            </label>
-
-            <button
-              onClick={handleStartIntro}
-              disabled={!termsChecked}
-              className="w-full rounded-2xl bg-slate-900 py-5 text-sm font-black text-white shadow-xl transition active:scale-[0.98] disabled:opacity-30"
-            >
-              会議をはじめる
-            </button>
+            <p className="mb-8 text-sm font-bold text-slate-500">5つの視点で、じぶんに潜る</p>
+            <div className="mb-8 rounded-[2rem] border border-white/60 bg-white/30 p-6 text-center text-lg font-bold leading-loose tracking-widest text-slate-700">導かない。照らすだけ。<br />歩くのは、あなた自身。</div>
+            <button onClick={handleStartIntro} className="w-full rounded-2xl bg-slate-900 py-5 text-sm font-black text-white shadow-xl active:scale-[0.98]">会議をはじめる</button>
           </div>
         </div>
       )}
 
       {isEditingUserName && (
-        <div className={modalBackdrop} onClick={() => setIsEditingUserName(false)}><div className="glass-card w-full max-w-sm rounded-[2rem] p-8 text-center" onClick={event => event.stopPropagation()}><h3 className="mb-6 text-lg font-black text-slate-800">お名前を教えてください</h3><input autoFocus value={tempName} maxLength={30} onChange={event => setTempName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') saveUserName(); }} className="neu-concave mb-6 w-full rounded-2xl bg-transparent p-4 text-center text-xl font-black outline-none" /><button onClick={saveUserName} className="w-full rounded-2xl bg-slate-900 py-4 text-xs font-black text-white shadow-lg">変更を適用</button></div></div>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/10 p-6 backdrop-blur-md" onClick={() => setIsEditingUserName(false)}>
+          <div className="glass-card w-full max-w-sm rounded-[2rem] p-8 text-center" onClick={event => event.stopPropagation()}>
+            <h3 className="mb-6 text-lg font-black text-slate-800">お名前を教えてください</h3>
+            <input autoFocus value={tempName} onChange={event => setTempName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') saveUserName(); }} className="neu-concave mb-6 w-full rounded-2xl bg-transparent p-4 text-center text-xl font-black outline-none" />
+            <button onClick={saveUserName} className="w-full rounded-2xl bg-slate-900 py-4 text-xs font-black text-white shadow-lg">変更を適用</button>
+          </div>
+        </div>
       )}
 
       {deleteTargetId && (
-        <div className={modalBackdrop} onClick={() => !isGenerating && setDeleteTargetId(null)}><div className="glass-card w-full max-w-sm rounded-[2rem] p-8 text-center" onClick={event => event.stopPropagation()}><h3 className="mb-6 text-lg font-black text-slate-800">この思考を消去しますか？</h3><div className="grid gap-2"><button onClick={() => handleDeleteSession(deleteTargetId)} disabled={isGenerating} className="w-full rounded-2xl bg-rose-600 py-4 text-xs font-black text-white disabled:opacity-40">消去する</button><button onClick={() => setDeleteTargetId(null)} disabled={isGenerating} className="w-full rounded-2xl py-4 text-xs font-black text-slate-500 hover:bg-white/50 disabled:opacity-40">キャンセル</button></div></div></div>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/10 p-6 backdrop-blur-md" onClick={() => setDeleteTargetId(null)}>
+          <div className="glass-card w-full max-w-sm rounded-[2rem] p-8 text-center" onClick={event => event.stopPropagation()}>
+            <h3 className="mb-6 text-lg font-black text-slate-800">この思考を消去しますか？</h3>
+            <div className="grid gap-2">
+              <button onClick={() => handleDeleteSession(deleteTargetId)} className="w-full rounded-2xl bg-rose-600 py-4 text-xs font-black text-white">消去する</button>
+              <button onClick={() => setDeleteTargetId(null)} className="w-full rounded-2xl py-4 text-xs font-black text-slate-500 hover:bg-white/50">キャンセル</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {(showBeliefs || showNotice) && (
@@ -660,43 +556,11 @@ const AppStable = () => {
           <div className="glass-card flex max-h-[82dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem]" onClick={event => event.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-white/20 p-6">
               <h3 className="text-xl font-black text-slate-800">{showNotice ? 'ご利用について' : '会議メンバーの魂'}</h3>
-              <button onClick={() => { setShowBeliefs(false); setShowNotice(false); }} className="rounded-full p-2 hover:bg-white/50" aria-label="閉じる"><X size={20} /></button>
+              <button onClick={() => { setShowBeliefs(false); setShowNotice(false); }} className="rounded-full p-2 hover:bg-white/50"><X size={20} /></button>
             </div>
             <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto p-6">
               {showNotice ? (
-                <>
-                  <div className="rounded-2xl border border-amber-100 bg-amber-50/60 p-5 text-sm font-bold leading-relaxed text-amber-800">
-                    <p className="mb-2 flex items-center gap-2 text-base font-black"><AlertCircle size={16} /> 免責事項</p>
-                    <p>{RELEASE_NOTICE}</p>
-                  </div>
-                  <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5 text-sm font-bold leading-relaxed text-indigo-800">
-                    <p className="mb-2 flex items-center gap-2 text-base font-black"><Info size={16} /> この版について</p>
-                    <p>現在の応答は、固定ロジックをもとにした初期版の内省サポートです。生成AIへの本接続は今後のアップデートで提供予定です。</p>
-                  </div>
-                  <div className="rounded-2xl bg-white/50 p-5">
-                    <p className="mb-3 flex items-center gap-2 text-sm font-black text-rose-700"><Phone size={14} /> 緊急・相談窓口</p>
-                    <div className="space-y-3">
-                      {CRISIS_RESOURCES.map(resource => (
-                        <div key={resource.name} className="rounded-xl border border-rose-100 bg-rose-50/40 p-3">
-                          <p className="mb-0.5 text-xs font-black text-slate-800">{resource.name}</p>
-                          {resource.number.startsWith('http') ? (
-                            <a href={resource.number} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs font-bold text-indigo-600 underline underline-offset-2">
-                              {resource.number} <ExternalLink size={10} />
-                            </a>
-                          ) : (
-                            <a href={`tel:${resource.number}`} className="text-sm font-black text-rose-700 underline underline-offset-2">{resource.number}</a>
-                          )}
-                          <p className="mt-0.5 text-[10px] font-bold text-slate-500">{resource.hours}</p>
-                          {resource.note && <p className="mt-0.5 text-[10px] font-medium text-slate-400">{resource.note}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => { setShowNotice(false); setShowPrivacyPolicy(true); }} className="flex-1 rounded-xl border border-white/60 bg-white/40 py-2.5 text-[11px] font-black text-slate-600 transition hover:bg-white/60">プライバシーポリシー</button>
-                    <button onClick={() => { setShowNotice(false); setShowTermsOfUse(true); }} className="flex-1 rounded-xl border border-white/60 bg-white/40 py-2.5 text-[11px] font-black text-slate-600 transition hover:bg-white/60">利用規約</button>
-                  </div>
-                </>
+                <div className="rounded-2xl bg-white/50 p-5 text-sm font-bold leading-relaxed text-slate-600">{RELEASE_NOTICE}</div>
               ) : (
                 AGENTS.map(agent => (
                   <div key={agent.id} className={`neu-convex-sm rounded-2xl p-5 ${agent.color}`}>
@@ -709,36 +573,8 @@ const AppStable = () => {
           </div>
         </div>
       )}
-
-      {showPrivacyPolicy && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/10 p-6 backdrop-blur-xl" onClick={() => setShowPrivacyPolicy(false)}>
-          <div className="glass-card flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem]" onClick={event => event.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-white/20 p-6">
-              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800"><ShieldAlert size={18} /> プライバシーポリシー</h3>
-              <button onClick={() => setShowPrivacyPolicy(false)} className="rounded-full p-2 hover:bg-white/50" aria-label="閉じる"><X size={20} /></button>
-            </div>
-            <div className="no-scrollbar flex-1 overflow-y-auto p-6">
-              <pre className="whitespace-pre-wrap rounded-2xl bg-white/50 p-5 text-[12px] font-medium leading-relaxed text-slate-700" style={{ fontFamily: 'inherit' }}>{PRIVACY_POLICY}</pre>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showTermsOfUse && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/10 p-6 backdrop-blur-xl" onClick={() => setShowTermsOfUse(false)}>
-          <div className="glass-card flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem]" onClick={event => event.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-white/20 p-6">
-              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800"><Info size={18} /> 利用規約</h3>
-              <button onClick={() => setShowTermsOfUse(false)} className="rounded-full p-2 hover:bg-white/50" aria-label="閉じる"><X size={20} /></button>
-            </div>
-            <div className="no-scrollbar flex-1 overflow-y-auto p-6">
-              <pre className="whitespace-pre-wrap rounded-2xl bg-white/50 p-5 text-[12px] font-medium leading-relaxed text-slate-700" style={{ fontFamily: 'inherit' }}>{TERMS_OF_USE}</pre>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default AppStable;
+export default App;

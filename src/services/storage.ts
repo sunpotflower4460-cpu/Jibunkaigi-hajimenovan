@@ -6,7 +6,9 @@ const DB_NAME = 'jibunkaigi_hajimenovan_db';
 const DB_VERSION = 1;
 const STORE_NAME = 'snapshots';
 const APP_STATE_ID = 'app-state';
+// MAX_SESSIONS: セッションの保存上限。初期版の安定性のため100件を上限とする。
 const MAX_SESSIONS = 100;
+// MAX_MESSAGES: メッセージの保存上限。localStorage / IndexedDB の容量圧迫を防ぐため1000件を上限とする。
 const MAX_MESSAGES = 1000;
 
 const AGENT_IDS: Exclude<AgentId, 'master'>[] = ['soul', 'creative', 'strategist', 'empath', 'critic'];
