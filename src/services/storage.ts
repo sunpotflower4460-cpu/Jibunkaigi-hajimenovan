@@ -38,6 +38,7 @@ const defaultState: StoredState = {
   settings: {
     displayName: 'あなた',
     introSeen: false,
+    termsAccepted: false,
   },
   savedAt: 0,
 };
@@ -127,6 +128,7 @@ const sanitizeSettings = (value: unknown): UserSettings => {
   return {
     displayName: displayName.slice(0, 30) || 'あなた',
     introSeen: Boolean(value.introSeen),
+    termsAccepted: Boolean(value.termsAccepted),
   };
 };
 

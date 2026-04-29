@@ -5,6 +5,7 @@ import {
   Compass,
   Copy,
   Edit3,
+  ExternalLink,
   Feather,
   Flame,
   Heart,
@@ -12,6 +13,7 @@ import {
   LayoutDashboard,
   Menu,
   MessageSquare,
+  Phone,
   Pin,
   Plus,
   Send,
@@ -26,6 +28,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { AGENTS, MODES, RELEASE_NOTICE } from './data/agents';
+import { CRISIS_RESOURCES, PRIVACY_POLICY, TERMS_OF_USE } from './data/legal';
 import { generateMockReactions, generateMockReply } from './services/ai';
 import { loadState, makeId, saveState } from './services/storage';
 import type { AgentId, Message, ModeId, Session, UserSettings } from './types';
@@ -99,9 +102,12 @@ const AppStable = () => {
   const [userInput, setUserInput] = useState('');
   const [selectedMode, setSelectedMode] = useState<ModeId>('medium');
   const [showInput, setShowInput] = useState(true);
-  const [showIntro, setShowIntro] = useState(!initialState.settings.introSeen);
+  const [showIntro, setShowIntro] = useState(!initialState.settings.termsAccepted);
+  const [termsChecked, setTermsChecked] = useState(false);
   const [showBeliefs, setShowBeliefs] = useState(false);
   const [showNotice, setShowNotice] = useState(false);
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+  const [showTermsOfUse, setShowTermsOfUse] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingAgent, setGeneratingAgent] = useState<string | null>(null);
@@ -190,8 +196,9 @@ const AppStable = () => {
   };
 
   const handleStartIntro = () => {
+    if (!termsChecked) return;
     playSound('intro');
-    setSettings(prev => ({ ...prev, introSeen: true }));
+    setSettings(prev => ({ ...prev, introSeen: true, termsAccepted: true }));
     setShowIntro(false);
   };
 
@@ -434,6 +441,8 @@ const AppStable = () => {
         <div className="mt-5 border-t border-white/30 pt-4">
           <button onClick={() => setShowBeliefs(true)} className="flex w-full items-center justify-center gap-2 rounded-xl p-2 text-[11px] font-black text-slate-500 transition hover:bg-white/40 hover:text-slate-800"><Info size={14} /> エージェントの役割</button>
           <button onClick={() => setShowNotice(true)} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl p-2 text-[11px] font-black text-slate-400 transition hover:bg-white/40 hover:text-slate-700"><AlertCircle size={14} /> ご利用について</button>
+          <button onClick={() => setShowPrivacyPolicy(true)} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl p-2 text-[11px] font-black text-slate-400 transition hover:bg-white/40 hover:text-slate-700"><ShieldAlert size={14} /> プライバシーポリシー</button>
+          <button onClick={() => setShowTermsOfUse(true)} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl p-2 text-[11px] font-black text-slate-400 transition hover:bg-white/40 hover:text-slate-700"><Info size={14} /> 利用規約</button>
         </div>
       </aside>
 
@@ -562,7 +571,46 @@ const AppStable = () => {
       </div>
 
       {showIntro && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-100 p-6"><div className="water-shimmer" /><div className="glass-card relative z-10 w-full max-w-md rounded-[2.5rem] p-8 text-center shadow-2xl"><div className="mb-7 inline-flex h-20 w-20 items-center justify-center rounded-[2rem] bg-slate-900 text-white shadow-2xl"><Users size={36} /></div><p className="mb-2 text-[10px] font-black uppercase tracking-[0.35em] text-slate-400">Inner Conference Room</p><h1 className="mb-2 text-4xl font-black tracking-tight text-slate-800">じぶん会議</h1><p className="mb-8 text-sm font-bold text-slate-500">5つの視点で、じぶんに潜る</p><div className="mb-8 rounded-[2rem] border border-white/60 bg-white/30 p-6 text-center text-lg font-bold leading-loose tracking-widest text-slate-700">導かない。照らすだけ。<br />歩くのは、あなた自身。</div><button onClick={handleStartIntro} className="w-full rounded-2xl bg-slate-900 py-5 text-sm font-black text-white shadow-xl active:scale-[0.98]">会議をはじめる</button></div></div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-100 p-6">
+          <div className="water-shimmer" />
+          <div className="glass-card relative z-10 flex w-full max-w-md flex-col rounded-[2.5rem] p-8 text-center shadow-2xl" style={{ maxHeight: '92dvh' }}>
+            <div className="mb-7 inline-flex h-20 w-20 items-center justify-center self-center rounded-[2rem] bg-slate-900 text-white shadow-2xl"><Users size={36} /></div>
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.35em] text-slate-400">Inner Conference Room</p>
+            <h1 className="mb-2 text-4xl font-black tracking-tight text-slate-800">じぶん会議</h1>
+            <p className="mb-6 text-sm font-bold text-slate-500">5つの視点で、じぶんに潜る</p>
+            <div className="mb-5 rounded-[2rem] border border-white/60 bg-white/30 p-6 text-center text-lg font-bold leading-loose tracking-widest text-slate-700">導かない。照らすだけ。<br />歩くのは、あなた自身。</div>
+
+            {/* Disclaimer */}
+            <div className="mb-4 rounded-2xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-left text-[11px] font-bold leading-relaxed text-amber-800">
+              <p className="mb-1 flex items-center gap-1.5 font-black"><AlertCircle size={12} /> ご注意</p>
+              <p>{RELEASE_NOTICE}</p>
+            </div>
+
+            {/* Terms consent */}
+            <label className="mb-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-white/60 bg-white/40 px-4 py-3 text-left text-[11px] font-bold text-slate-600">
+              <input
+                type="checkbox"
+                checked={termsChecked}
+                onChange={e => setTermsChecked(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-slate-800"
+              />
+              <span>
+                <button type="button" onClick={() => setShowTermsOfUse(true)} className="font-black text-indigo-600 underline underline-offset-2">利用規約</button>
+                {' および '}
+                <button type="button" onClick={() => setShowPrivacyPolicy(true)} className="font-black text-indigo-600 underline underline-offset-2">プライバシーポリシー</button>
+                {' を読み、同意します。（12歳以上）'}
+              </span>
+            </label>
+
+            <button
+              onClick={handleStartIntro}
+              disabled={!termsChecked}
+              className="w-full rounded-2xl bg-slate-900 py-5 text-sm font-black text-white shadow-xl transition active:scale-[0.98] disabled:opacity-30"
+            >
+              会議をはじめる
+            </button>
+          </div>
+        </div>
       )}
 
       {isEditingUserName && (
@@ -574,7 +622,82 @@ const AppStable = () => {
       )}
 
       {(showBeliefs || showNotice) && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/10 p-6 backdrop-blur-xl" onClick={() => { setShowBeliefs(false); setShowNotice(false); }}><div className="glass-card flex max-h-[82dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem]" onClick={event => event.stopPropagation()}><div className="flex items-center justify-between border-b border-white/20 p-6"><h3 className="text-xl font-black text-slate-800">{showNotice ? 'ご利用について' : '会議メンバーの魂'}</h3><button onClick={() => { setShowBeliefs(false); setShowNotice(false); }} className="rounded-full p-2 hover:bg-white/50"><X size={20} /></button></div><div className="no-scrollbar flex-1 space-y-4 overflow-y-auto p-6">{showNotice ? (<div className="rounded-2xl bg-white/50 p-5 text-sm font-bold leading-relaxed text-slate-600">{RELEASE_NOTICE}</div>) : (AGENTS.map(agent => (<div key={agent.id} className={`neu-convex-sm rounded-2xl p-5 ${agent.color}`}><div className={`mb-3 flex items-center gap-3 text-xs font-black ${agent.accentColor}`}>{iconForAgent(agent.id)} {agent.name} — {agent.title}</div><p className="text-xs font-bold italic leading-relaxed text-slate-600">{agent.belief}</p></div>)))}</div></div></div>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/10 p-6 backdrop-blur-xl" onClick={() => { setShowBeliefs(false); setShowNotice(false); }}>
+          <div className="glass-card flex max-h-[82dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem]" onClick={event => event.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-white/20 p-6">
+              <h3 className="text-xl font-black text-slate-800">{showNotice ? 'ご利用について' : '会議メンバーの魂'}</h3>
+              <button onClick={() => { setShowBeliefs(false); setShowNotice(false); }} className="rounded-full p-2 hover:bg-white/50" aria-label="閉じる"><X size={20} /></button>
+            </div>
+            <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto p-6">
+              {showNotice ? (
+                <>
+                  <div className="rounded-2xl border border-amber-100 bg-amber-50/60 p-5 text-sm font-bold leading-relaxed text-amber-800">
+                    <p className="mb-2 flex items-center gap-2 text-base font-black"><AlertCircle size={16} /> 免責事項</p>
+                    <p>{RELEASE_NOTICE}</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/50 p-5">
+                    <p className="mb-3 flex items-center gap-2 text-sm font-black text-rose-700"><Phone size={14} /> 緊急・相談窓口</p>
+                    <div className="space-y-3">
+                      {CRISIS_RESOURCES.map(resource => (
+                        <div key={resource.name} className="rounded-xl border border-rose-100 bg-rose-50/40 p-3">
+                          <p className="mb-0.5 text-xs font-black text-slate-800">{resource.name}</p>
+                          {resource.number.startsWith('http') ? (
+                            <a href={resource.number} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs font-bold text-indigo-600 underline underline-offset-2">
+                              {resource.number} <ExternalLink size={10} />
+                            </a>
+                          ) : (
+                            <a href={`tel:${resource.number}`} className="text-sm font-black text-rose-700 underline underline-offset-2">{resource.number}</a>
+                          )}
+                          <p className="mt-0.5 text-[10px] font-bold text-slate-500">{resource.hours}</p>
+                          {resource.note && <p className="mt-0.5 text-[10px] font-medium text-slate-400">{resource.note}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setShowNotice(false); setShowPrivacyPolicy(true); }} className="flex-1 rounded-xl border border-white/60 bg-white/40 py-2.5 text-[11px] font-black text-slate-600 transition hover:bg-white/60">プライバシーポリシー</button>
+                    <button onClick={() => { setShowNotice(false); setShowTermsOfUse(true); }} className="flex-1 rounded-xl border border-white/60 bg-white/40 py-2.5 text-[11px] font-black text-slate-600 transition hover:bg-white/60">利用規約</button>
+                  </div>
+                </>
+              ) : (
+                AGENTS.map(agent => (
+                  <div key={agent.id} className={`neu-convex-sm rounded-2xl p-5 ${agent.color}`}>
+                    <div className={`mb-3 flex items-center gap-3 text-xs font-black ${agent.accentColor}`}>{iconForAgent(agent.id)} {agent.name} — {agent.title}</div>
+                    <p className="text-xs font-bold italic leading-relaxed text-slate-600">{agent.belief}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPrivacyPolicy && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/10 p-6 backdrop-blur-xl" onClick={() => setShowPrivacyPolicy(false)}>
+          <div className="glass-card flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem]" onClick={event => event.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-white/20 p-6">
+              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800"><ShieldAlert size={18} /> プライバシーポリシー</h3>
+              <button onClick={() => setShowPrivacyPolicy(false)} className="rounded-full p-2 hover:bg-white/50" aria-label="閉じる"><X size={20} /></button>
+            </div>
+            <div className="no-scrollbar flex-1 overflow-y-auto p-6">
+              <pre className="whitespace-pre-wrap rounded-2xl bg-white/50 p-5 text-[12px] font-medium leading-relaxed text-slate-700" style={{ fontFamily: 'inherit' }}>{PRIVACY_POLICY}</pre>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showTermsOfUse && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/10 p-6 backdrop-blur-xl" onClick={() => setShowTermsOfUse(false)}>
+          <div className="glass-card flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem]" onClick={event => event.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-white/20 p-6">
+              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800"><Info size={18} /> 利用規約</h3>
+              <button onClick={() => setShowTermsOfUse(false)} className="rounded-full p-2 hover:bg-white/50" aria-label="閉じる"><X size={20} /></button>
+            </div>
+            <div className="no-scrollbar flex-1 overflow-y-auto p-6">
+              <pre className="whitespace-pre-wrap rounded-2xl bg-white/50 p-5 text-[12px] font-medium leading-relaxed text-slate-700" style={{ fontFamily: 'inherit' }}>{TERMS_OF_USE}</pre>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
