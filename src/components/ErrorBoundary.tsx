@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertCircle } from 'lucide-react';
-import { STORAGE_KEY } from '../services/storage';
+import { clearLocalState } from '../services/storage';
 
 type ErrorBoundaryProps = {
   children: ReactNode;
@@ -25,12 +25,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     window.location.reload();
   };
 
-  private handleResetLocalData = () => {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch (error) {
-      console.warn('Failed to clear local data after crash', error);
-    }
+  private handleResetLocalData = async () => {
+    await clearLocalState();
     window.location.reload();
   };
 
