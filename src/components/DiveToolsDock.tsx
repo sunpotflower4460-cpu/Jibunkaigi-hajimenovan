@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Archive, BookOpen, ChevronUp, Settings, Sparkles, StickyNote, Waves, X } from 'lucide-react';
 import { openDiveTool, type DiveToolId } from '../utils/diveTools';
 
@@ -15,8 +15,30 @@ const TOOLS: Array<{
   { id: 'settings', label: '設定', description: '保存や注意を見る', icon: <Settings size={14} /> },
 ];
 
+const LEGACY_BUTTON_LABELS = ['設定を開く', '会議録を開く', '言葉の水面を開く', 'どう思う？付箋を開く', '輪郭を開く'];
+
 export const DiveToolsDock = () => {
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const legacyButtons = LEGACY_BUTTON_LABELS
+      .map(label => document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`))
+      .filter((button): button is HTMLButtonElement => Boolean(button));
+
+    for (const button of legacyButtons) {
+      button.dataset.legacyDiveTool = 'true';
+      button.setAttribute('aria-hidden', 'true');
+      button.tabIndex = -1;
+    }
+
+    return () => {
+      for (const button of legacyButtons) {
+        delete button.dataset.legacyDiveTool;
+        button.removeAttribute('aria-hidden');
+        button.removeAttribute('tabindex');
+      }
+    };
+  }, []);
 
   const handleOpenTool = (toolId: DiveToolId) => {
     setIsOpen(false);

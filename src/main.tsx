@@ -14,6 +14,7 @@ import { fetchCloudState, initCloudSave, isCloudSaveConfigured } from './service
 import { hydrateLocalStorageFromIndexedDb, loadState, restoreStateToLocalStores } from './services/storage';
 import { installPageAutoScroll } from './utils/installPageAutoScroll';
 import './index.css';
+import './dive-tools-accessibility.css';
 
 installPageAutoScroll();
 
