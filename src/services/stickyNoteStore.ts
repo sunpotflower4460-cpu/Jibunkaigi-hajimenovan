@@ -33,28 +33,34 @@ const sanitizeNote = (value: unknown): StickyNote | null => {
   const content = toSafeString(value.content).trim();
   if (!id || !sessionId || !content) return null;
 
+  const createdAt = toSafeNumber(value.createdAt);
+  const updatedAt = toSafeNumber(value.updatedAt, createdAt);
+
   return {
     id,
     sessionId,
     kind,
     label: toSafeString(value.label, template.label).trim().slice(0, 30) || template.label,
     content: content.slice(0, 220),
-    createdAt: toSafeNumber(value.createdAt),
-    updatedAt: toSafeNumber(value.updatedAt),
+    createdAt,
+    updatedAt,
   };
+};
+
+const sanitizeNotes = (notes: unknown): StickyNote[] => {
+  if (!Array.isArray(notes)) return [];
+  return notes
+    .map(sanitizeNote)
+    .filter((note): note is StickyNote => Boolean(note))
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, MAX_NOTES);
 };
 
 export const loadStickyNotes = (): StickyNote[] => {
   try {
     const raw = localStorage.getItem(STICKY_NOTES_STORAGE_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map(sanitizeNote)
-      .filter((note): note is StickyNote => Boolean(note))
-      .sort((a, b) => b.updatedAt - a.updatedAt)
-      .slice(0, MAX_NOTES);
+    return sanitizeNotes(JSON.parse(raw));
   } catch (error) {
     console.warn('Failed to load sticky notes', error);
     return [];
@@ -62,15 +68,13 @@ export const loadStickyNotes = (): StickyNote[] => {
 };
 
 export const saveStickyNotes = (notes: StickyNote[]) => {
+  const safeNotes = sanitizeNotes(notes);
   try {
-    const safeNotes = notes
-      .map(sanitizeNote)
-      .filter((note): note is StickyNote => Boolean(note))
-      .sort((a, b) => b.updatedAt - a.updatedAt)
-      .slice(0, MAX_NOTES);
     localStorage.setItem(STICKY_NOTES_STORAGE_KEY, JSON.stringify(safeNotes));
+    return loadStickyNotes();
   } catch (error) {
     console.warn('Failed to save sticky notes', error);
+    return safeNotes;
   }
 };
 
@@ -83,24 +87,24 @@ export const createStickyNote = ({
   kind: StickyNoteKind;
   content: string;
 }) => {
+  const safeSessionId = sessionId.trim();
+  const safeContent = content.trim().slice(0, 220);
+  if (!safeSessionId || !safeContent) return loadStickyNotes();
+
   const template = STICKY_NOTE_TEMPLATES.find(item => item.kind === kind) || STICKY_NOTE_TEMPLATES[0];
   const now = Date.now();
   const note: StickyNote = {
     id: makeId(),
-    sessionId,
+    sessionId: safeSessionId,
     kind,
     label: template.label,
-    content: content.trim().slice(0, 220),
+    content: safeContent,
     createdAt: now,
     updatedAt: now,
   };
-  const nextNotes = [note, ...loadStickyNotes()].slice(0, MAX_NOTES);
-  saveStickyNotes(nextNotes);
-  return nextNotes;
+  return saveStickyNotes([note, ...loadStickyNotes()].slice(0, MAX_NOTES));
 };
 
 export const deleteStickyNote = (noteId: string) => {
-  const nextNotes = loadStickyNotes().filter(note => note.id !== noteId);
-  saveStickyNotes(nextNotes);
-  return nextNotes;
+  return saveStickyNotes(loadStickyNotes().filter(note => note.id !== noteId));
 };
