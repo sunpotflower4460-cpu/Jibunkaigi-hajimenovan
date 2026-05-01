@@ -2,6 +2,7 @@ import { AGENTS } from '../data/agents';
 import type { AgentId, Message, ModeId, Reaction } from '../types';
 import { buildInternalMirrorMap, getAgentMirrorHintText } from './internalMirrorMap';
 import { analyzeMirrorSafety, getMirrorReturnQuestion, getMirrorSafetyLine } from './mirrorSafety';
+import { buildOthersReactions } from './othersReactions';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -47,34 +48,6 @@ const mirrorReturnQuestions = [
   '今は、どの声を急いで結論にしないで置いておきたいですか？',
   'あなたは、どう思いますか？',
 ];
-
-const reactionTemplates: Record<Exclude<AgentId, 'master'>, Reaction[]> = {
-  soul: [
-    { posture: '静観', comment: '向かいたい先を見ている' },
-    { posture: '反射', comment: 'まだ見えない方向を映している' },
-    { posture: '余白', comment: '急がず気配を見ている' },
-  ],
-  creative: [
-    { posture: '点火', comment: '残っている火に反応している' },
-    { posture: '前進', comment: '小さく動ける場所を見ている' },
-    { posture: '光', comment: '可能性の方を向いている' },
-  ],
-  strategist: [
-    { posture: '整理', comment: '矛盾の形を見ている' },
-    { posture: '設計', comment: '前提のズレを探している' },
-    { posture: '分析', comment: '絡まりの位置を見ている' },
-  ],
-  empath: [
-    { posture: '抱擁', comment: '奥の気持ちを受け止めている' },
-    { posture: '泉', comment: '疲れをほどこうとしている' },
-    { posture: '共感', comment: '小さな本音を守っている' },
-  ],
-  critic: [
-    { posture: '警戒', comment: '逃げている場所を見ている' },
-    { posture: '防御', comment: '削られない道を探している' },
-    { posture: '現実', comment: '足場を確認している' },
-  ],
-};
 
 export const buildContextText = (messages: Message[], userName: string) => {
   return messages
@@ -198,13 +171,5 @@ export const generateMockReply = async ({
 
 export const generateMockReactions = async (selectedAgentId: AgentId): Promise<Partial<Record<AgentId, Reaction>>> => {
   await wait(120);
-  const reactions: Partial<Record<AgentId, Reaction>> = {};
-  const seed = `${selectedAgentId}-${Date.now()}`;
-
-  for (const agent of AGENTS) {
-    if (agent.id === selectedAgentId) continue;
-    reactions[agent.id] = pick(reactionTemplates[agent.id], `${seed}-${agent.id}`);
-  }
-
-  return reactions;
+  return buildOthersReactions(selectedAgentId, `${selectedAgentId}-${Date.now()}`);
 };
