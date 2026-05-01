@@ -1,3 +1,4 @@
+import { getAgentMirrorFramework } from '../data/agentMirrorFrameworks';
 import type { AgentId, InternalMirrorMap, Message, MirrorAgentHint, MirrorMapNode, MirrorMapNodeKind } from '../types';
 
 const KIND_LABELS: Record<MirrorMapNodeKind, string> = {
@@ -18,15 +19,6 @@ const KIND_KEYWORDS: Record<MirrorMapNodeKind, string[]> = {
   avoidance: ['逃げたい', '見たくない', '避け', '後回し', 'やめたい', '無理', '怖くて', 'できない'],
   theme: ['自分', '仕事', '音楽', 'アプリ', '人', '愛', '現実', 'お金', '創造', 'AI'],
   grounding: ['今日', '一つ', '小さく', '現実', '連絡', '休む', '歩く', '寝る', '相談', '試す'],
-};
-
-const AGENT_FOCUS: Record<AgentId, { kind: MirrorMapNodeKind; focus: string; caution?: string }> = {
-  creative: { kind: 'passion', focus: 'まだ消えてない情熱' },
-  empath: { kind: 'feeling', focus: '言葉の奥にある気持ち' },
-  soul: { kind: 'direction', focus: '本当は向かいたい方向' },
-  strategist: { kind: 'contradiction', focus: '矛盾している部分' },
-  critic: { kind: 'avoidance', focus: '逃げている部分', caution: '責めるためではなく、現実の足場を守るために映す。' },
-  master: { kind: 'theme', focus: '複数の声の配置' },
 };
 
 const normalize = (text: string) => text.replace(/[\n\r\t]/g, ' ').trim();
@@ -105,13 +97,16 @@ const makeFallbackNode = (kind: MirrorMapNodeKind): MirrorMapNode => ({
 });
 
 const buildAgentHint = (agentId: AgentId, nodes: MirrorMapNode[]): MirrorAgentHint => {
-  const config = AGENT_FOCUS[agentId];
-  const focusedNodes = nodes.filter(node => node.kind === config.kind).slice(0, 3);
+  const framework = getAgentMirrorFramework(agentId);
+  const focusedNodes = nodes.filter(node => node.kind === framework.focusKind).slice(0, 3);
   return {
     agentId,
-    focus: config.focus,
-    nodes: focusedNodes.length > 0 ? focusedNodes : [makeFallbackNode(config.kind)],
-    caution: config.caution,
+    focus: framework.center,
+    frameworkName: framework.frameworkName,
+    lenses: framework.lenses,
+    outputRule: framework.outputRule,
+    nodes: focusedNodes.length > 0 ? focusedNodes : [makeFallbackNode(framework.focusKind)],
+    caution: agentId === 'critic' ? '責めるためではなく、現実の足場を守るために映す。' : undefined,
   };
 };
 
@@ -141,6 +136,7 @@ export const getAgentMirrorHintText = (map: InternalMirrorMap, agentId: AgentId)
   const hint = map.agentHints[agentId];
   if (!hint) return '';
   const labels = hint.nodes.map(node => node.label).join(' / ');
+  const lenses = hint.lenses?.slice(0, 3).join('・') || '';
   const caution = hint.caution ? ` 注意: ${hint.caution}` : '';
-  return `内部マップ焦点: ${hint.focus}${labels ? ` (${labels})` : ''}.${caution}`;
+  return `内部フレーム: ${hint.frameworkName || '鏡の角度'} / 焦点: ${hint.focus}${labels ? ` (${labels})` : ''}${lenses ? ` / 観点: ${lenses}` : ''}. ${hint.outputRule || ''}${caution}`;
 };
