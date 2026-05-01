@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AlertCircle, Cloud, CloudOff, CreditCard, Database, KeyRound, Megaphone, Settings, ShieldCheck, X } from 'lucide-react';
 import { getCloudSaveSnapshot, isCloudSaveConfigured, subscribeCloudSaveStatus, type CloudSaveSnapshot } from '../services/cloud/firebaseCloud';
-import { subscribeDiveTool } from '../utils/diveTools';
+import { subscribeCloseDivePanels, subscribeDiveTool } from '../utils/diveTools';
 
 const statusLabel = (snapshot: CloudSaveSnapshot) => {
   switch (snapshot.status) {
@@ -51,6 +51,15 @@ export const SettingsPanel = () => {
 
   useEffect(() => subscribeCloudSaveStatus(setSnapshot), []);
   useEffect(() => subscribeDiveTool('settings', () => setIsOpen(true)), []);
+  useEffect(() => subscribeCloseDivePanels(() => setIsOpen(false)), []);
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen]);
 
   const cloudConfigured = isCloudSaveConfigured();
   const cloudDescription = cloudConfigured
@@ -139,17 +148,6 @@ export const SettingsPanel = () => {
                 <p className="text-xs font-bold leading-relaxed">
                   このアプリは自己対話と内省を助けるためのツールです。医療・診断・治療・緊急対応を目的としたものではありません。強い苦痛や危険を感じる場合は、身近な人や専門機関へ相談してください。
                 </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/60 bg-white/40 p-4">
-                <h4 className="mb-2 text-sm font-black text-slate-700">今後ここに追加する候補</h4>
-                <ul className="space-y-1 text-xs font-bold leading-relaxed text-slate-500">
-                  <li>・クラウド保存のON/OFF</li>
-                  <li>・保存データの削除</li>
-                  <li>・プライバシーポリシーへのリンク</li>
-                  <li>・AI API接続状態</li>
-                  <li>・広告/課金の状態</li>
-                </ul>
               </div>
             </div>
           </section>
