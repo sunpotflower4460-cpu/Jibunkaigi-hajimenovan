@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import AppStable from './AppStable';
 import { CloudSaveStatusBadge } from './components/CloudSaveStatusBadge';
 import { ConferenceRecordPanel } from './components/ConferenceRecordPanel';
+import { DiveDialogGuard } from './components/DiveDialogGuard';
 import { DiveToolsDock } from './components/DiveToolsDock';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FloatingKeywordsPanel } from './components/FloatingKeywordsPanel';
@@ -44,6 +45,7 @@ const renderApp = () => {
         <StickyNotesPanel />
         <ThemeArchivePanel />
         <DiveToolsDock />
+        <DiveDialogGuard />
       </ErrorBoundary>
     </React.StrictMode>,
   );
