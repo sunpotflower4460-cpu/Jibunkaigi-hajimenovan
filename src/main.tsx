@@ -6,6 +6,7 @@ import { ConferenceRecordPanel } from './components/ConferenceRecordPanel';
 import { DiveToolsDock } from './components/DiveToolsDock';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FloatingKeywordsPanel } from './components/FloatingKeywordsPanel';
+import { IntroLegalSoftener } from './components/IntroLegalSoftener';
 import { MirrorAtmosphere } from './components/MirrorAtmosphere';
 import { SettingsPanel } from './components/SettingsPanel';
 import { StickyNotesPanel } from './components/StickyNotesPanel';
@@ -17,6 +18,7 @@ import { installPageAutoScroll } from './utils/installPageAutoScroll';
 import './index.css';
 import './dive-tools-accessibility.css';
 import './title-dolphin-presence.css';
+import './phase-2c-17-fixes.css';
 
 installPageAutoScroll();
 
@@ -34,6 +36,7 @@ const renderApp = () => {
         <MirrorAtmosphere />
         <TitleDolphinPresence />
         <AppStable />
+        <IntroLegalSoftener />
         <CloudSaveStatusBadge />
         <SettingsPanel />
         <ConferenceRecordPanel />
