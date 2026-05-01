@@ -30,32 +30,38 @@ const sanitizeRecord = (value: unknown): ConferenceRecord | null => {
     ? value.keywords.map(keyword => toSafeString(keyword).trim()).filter(Boolean).slice(0, 12)
     : [];
 
+  const createdAt = toSafeNumber(value.createdAt);
+  const updatedAt = toSafeNumber(value.updatedAt, createdAt);
+
   return {
     id,
     sessionId,
-    title: toSafeString(value.title, '会議録').trim() || '会議録',
-    topic: toSafeString(value.topic, 'まだ言葉になりきらない問い').trim() || 'まだ言葉になりきらない問い',
+    title: toSafeString(value.title, '会議録').trim().slice(0, 60) || '会議録',
+    topic: toSafeString(value.topic, 'まだ言葉になりきらない問い').trim().slice(0, 120) || 'まだ言葉になりきらない問い',
     keywords,
     agentNotes: sanitizeAgentNotes(value.agentNotes),
     mirrorSummary: toSafeString(value.mirrorSummary).trim().slice(0, 800),
     selfLine: toSafeString(value.selfLine).trim().slice(0, 160),
     returnQuestion: toSafeString(value.returnQuestion).trim().slice(0, 160),
-    createdAt: toSafeNumber(value.createdAt),
-    updatedAt: toSafeNumber(value.updatedAt),
+    createdAt,
+    updatedAt,
   };
+};
+
+const sanitizeRecords = (records: unknown): ConferenceRecord[] => {
+  if (!Array.isArray(records)) return [];
+  return records
+    .map(sanitizeRecord)
+    .filter((record): record is ConferenceRecord => Boolean(record))
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, MAX_RECORDS);
 };
 
 export const loadConferenceRecords = (): ConferenceRecord[] => {
   try {
     const raw = localStorage.getItem(RECORDS_STORAGE_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map(sanitizeRecord)
-      .filter((record): record is ConferenceRecord => Boolean(record))
-      .sort((a, b) => b.updatedAt - a.updatedAt)
-      .slice(0, MAX_RECORDS);
+    return sanitizeRecords(JSON.parse(raw));
   } catch (error) {
     console.warn('Failed to load conference records', error);
     return [];
@@ -63,27 +69,21 @@ export const loadConferenceRecords = (): ConferenceRecord[] => {
 };
 
 export const saveConferenceRecords = (records: ConferenceRecord[]) => {
+  const safeRecords = sanitizeRecords(records);
   try {
-    const safeRecords = records
-      .map(sanitizeRecord)
-      .filter((record): record is ConferenceRecord => Boolean(record))
-      .sort((a, b) => b.updatedAt - a.updatedAt)
-      .slice(0, MAX_RECORDS);
     localStorage.setItem(RECORDS_STORAGE_KEY, JSON.stringify(safeRecords));
+    return loadConferenceRecords();
   } catch (error) {
     console.warn('Failed to save conference records', error);
+    return safeRecords;
   }
 };
 
 export const upsertConferenceRecord = (record: ConferenceRecord) => {
   const records = loadConferenceRecords();
-  const nextRecords = [record, ...records.filter(item => item.id !== record.id)].slice(0, MAX_RECORDS);
-  saveConferenceRecords(nextRecords);
-  return nextRecords;
+  return saveConferenceRecords([record, ...records.filter(item => item.id !== record.id)].slice(0, MAX_RECORDS));
 };
 
 export const deleteConferenceRecord = (recordId: string) => {
-  const records = loadConferenceRecords().filter(record => record.id !== recordId);
-  saveConferenceRecords(records);
-  return records;
+  return saveConferenceRecords(loadConferenceRecords().filter(record => record.id !== recordId));
 };
