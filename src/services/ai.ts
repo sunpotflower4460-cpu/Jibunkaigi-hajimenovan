@@ -40,6 +40,13 @@ const agentQuestion: Record<Exclude<AgentId, 'master'>, string> = {
   critic: '今、自分でも少し避けているものがあるとしたら何だと思う？',
 };
 
+const mirrorReturnQuestions = [
+  'この中で、今のあなたに一番近い声はどれですか？',
+  'まだ見ていない本音があるとしたら、どの声の近くにありそうですか？',
+  '今は、どの声を急いで結論にしないで置いておきたいですか？',
+  'あなたは、どう思いますか？',
+];
+
 const reactionTemplates: Record<Exclude<AgentId, 'master'>, Reaction[]> = {
   soul: [
     { posture: '静観', comment: '向かいたい先を見ている' },
@@ -92,6 +99,47 @@ const getLastUserText = (messages: Message[]) => {
 
 const compactLines = (lines: string[]) => lines.filter(Boolean).join('\n\n');
 
+const getRecentUserFragments = (messages: Message[]) => {
+  return messages
+    .filter(message => message.role === 'user')
+    .slice(-3)
+    .map(message => `「${message.content.slice(0, 24)}」`);
+};
+
+const getRecentAgentNames = (messages: Message[]) => {
+  const names = messages
+    .filter(message => message.role === 'ai' && message.agentId && message.agentId !== 'master')
+    .slice(-4)
+    .map(message => AGENTS.find(agent => agent.id === message.agentId)?.name)
+    .filter((name): name is string => Boolean(name));
+  return [...new Set(names)];
+};
+
+const buildMirrorReply = ({ messages, userName, safetyReturnQuestion, shouldReturnQuestion }: {
+  messages: Message[];
+  userName: string;
+  safetyReturnQuestion: string;
+  shouldReturnQuestion: boolean;
+}) => {
+  const fragments = getRecentUserFragments(messages);
+  const agentNames = getRecentAgentNames(messages);
+  const fragmentText = fragments.length > 0 ? fragments.join('、') : 'まだ言葉になっていないもの';
+  const voiceText = agentNames.length > 0
+    ? `${agentNames.join('、')}の角度が、まだひとつに混ざらず残っています。`
+    : 'まだ、いくつかの声がひとつに混ざらず残っています。';
+  const returnQuestion = safetyReturnQuestion || pick(mirrorReturnQuestions, fragmentText);
+  const safetyLine = shouldReturnQuestion
+    ? '今は結論へ寄せすぎず、反対側の声や現実の足場も水面に残しておいてよさそうです。'
+    : '今は、ひとつの答えにまとめきらなくて大丈夫です。';
+
+  return compactLines([
+    `${userName}さんのここまでの声を鏡に置くと、${fragmentText}の奥に、まだ分けて見た方がいい層があります。`,
+    voiceText,
+    safetyLine,
+    returnQuestion,
+  ]);
+};
+
 export const generateMockReply = async ({
   agentId,
   mode,
@@ -109,16 +157,12 @@ export const generateMockReply = async ({
   const safetyReturnQuestion = getMirrorReturnQuestion(safetySignal);
 
   if (agentId === 'master') {
-    const userMessages = messages.filter(message => message.role === 'user').slice(-3);
-    const fragments = userMessages.map(message => `「${message.content.slice(0, 24)}」`).join('、');
-    const safetyLine = safetySignal.shouldReturnQuestion
-      ? '今はひとつにまとめきらず、反対側の声や現実の足場も少し残しておいてよさそうです。'
-      : '今はひとつにまとめきらなくて大丈夫です。';
-    return compactLines([
-      `${userName}さんのここまでの声を映すと、${fragments || 'まだ言葉になっていないもの'}の奥に、いくつかの声が並んでいるように見えます。`,
-      safetyLine,
-      safetyReturnQuestion || 'この中で、今のあなたに一番近い声はどれですか？',
-    ]);
+    return buildMirrorReply({
+      messages,
+      userName,
+      safetyReturnQuestion,
+      shouldReturnQuestion: safetySignal.shouldReturnQuestion,
+    });
   }
 
   const lead = pick(agentLead[agentId], lastText);
