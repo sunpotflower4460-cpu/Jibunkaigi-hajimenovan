@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import AppStable from './AppStable';
 import { CloudSaveStatusBadge } from './components/CloudSaveStatusBadge';
+import { ConferenceRecordPanel } from './components/ConferenceRecordPanel';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SettingsPanel } from './components/SettingsPanel';
 import { fetchCloudState, initCloudSave, isCloudSaveConfigured } from './services/cloud/firebaseCloud';
@@ -25,6 +26,7 @@ const renderApp = () => {
         <AppStable />
         <CloudSaveStatusBadge />
         <SettingsPanel />
+        <ConferenceRecordPanel />
       </ErrorBoundary>
     </React.StrictMode>,
   );
