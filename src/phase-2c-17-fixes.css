@@ -3,19 +3,22 @@
 }
 
 .floating-keyword {
-  max-width: min(13rem, 56vw);
+  max-width: min(9.25rem, 42vw);
   white-space: nowrap;
   word-break: keep-all;
   overflow-wrap: normal;
-  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.12;
   text-align: center;
   transform-origin: center;
+  writing-mode: horizontal-tb;
 }
 
 @media (max-width: 640px) {
   .floating-keyword {
-    max-width: 10.5rem;
-    padding-inline: 0.8rem !important;
-    line-height: 1.1;
+    max-width: 7.5rem;
+    padding-inline: 0.75rem !important;
+    line-height: 1.08;
   }
 }
