@@ -39,6 +39,18 @@ export type ConferenceRecord = {
   updatedAt: number;
 };
 
+export type StickyNoteKind = 'question' | 'truth' | 'notYet' | 'later' | 'important' | 'free';
+
+export type StickyNote = {
+  id: string;
+  sessionId: string;
+  kind: StickyNoteKind;
+  label: string;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type UserSettings = {
   displayName: string;
   introSeen: boolean;
