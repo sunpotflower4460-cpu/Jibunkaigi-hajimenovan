@@ -1,4 +1,5 @@
 import { scheduleCloudStateSave } from './cloud/firebaseCloud';
+import { normalizeOthersReactions } from './othersReactions';
 import type { AgentId, Message, Reaction, Session, UserSettings } from '../types';
 
 export const STORAGE_KEY = 'jibunkaigi_hajimenovan_v1';
@@ -12,14 +13,6 @@ const MAX_SESSIONS = 100;
 const MAX_MESSAGES = 1000;
 
 const AGENT_IDS: Exclude<AgentId, 'master'>[] = ['soul', 'creative', 'strategist', 'empath', 'critic'];
-
-const FALLBACK_REACTIONS: Record<Exclude<AgentId, 'master'>, Reaction> = {
-  soul: { posture: '静観', comment: '静かに映している' },
-  creative: { posture: '点火', comment: 'まだ熱を見ている' },
-  strategist: { posture: '整理', comment: '構造を見ている' },
-  empath: { posture: '抱擁', comment: 'そっと受け止めている' },
-  critic: { posture: '警戒', comment: '足場を見ている' },
-};
 
 export type StoredState = {
   sessions: Session[];
@@ -72,10 +65,13 @@ const sanitizeSession = (value: unknown): Session | null => {
 };
 
 const sanitizeReactions = (value: unknown, ownAgentId?: AgentId): Message['reactions'] | undefined => {
+  if (!ownAgentId || ownAgentId === 'master') return undefined;
+
   const reactions: Partial<Record<AgentId, Reaction>> = {};
 
   if (isPlainObject(value)) {
     for (const agentId of AGENT_IDS) {
+      if (agentId === ownAgentId) continue;
       const rawReaction = value[agentId];
       if (!isPlainObject(rawReaction)) continue;
       const posture = toSafeString(rawReaction.posture).trim();
@@ -89,15 +85,7 @@ const sanitizeReactions = (value: unknown, ownAgentId?: AgentId): Message['react
     }
   }
 
-  if (ownAgentId && ownAgentId !== 'master') {
-    for (const agentId of AGENT_IDS) {
-      if (agentId !== ownAgentId && !reactions[agentId]) {
-        reactions[agentId] = FALLBACK_REACTIONS[agentId];
-      }
-    }
-  }
-
-  return Object.keys(reactions).length > 0 ? reactions : undefined;
+  return normalizeOthersReactions(ownAgentId, reactions, 'storage');
 };
 
 const sanitizeMessage = (value: unknown, sessionIds: Set<string>): Message | null => {
@@ -309,12 +297,12 @@ export const clearLocalState = async () => {
 };
 
 export const saveState = (state: Omit<StoredState, 'savedAt'> | StoredState) => {
-  const nextState: StoredState = {
+  const nextState = sanitizeStoredState({
     sessions: state.sessions,
     messages: state.messages,
     settings: state.settings,
     savedAt: Date.now(),
-  };
+  });
 
   try {
     writeLocalStorageState(nextState);
