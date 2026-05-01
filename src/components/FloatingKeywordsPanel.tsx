@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, Sparkles, Waves, X } from 'lucide-react';
+import { ChevronDown, MessageSquareQuote, Sparkles, Waves, X } from 'lucide-react';
 import { buildFloatingKeywords, getRecentSessions, getSessionMessageCount } from '../services/keywordField';
+import { openSelfReturnNote } from '../utils/selfReturn';
 
 const EmptyState = () => (
   <div className="flex h-80 flex-col items-center justify-center rounded-[2rem] border border-dashed border-white/70 bg-white/35 p-8 text-center">
@@ -20,6 +21,7 @@ export const FloatingKeywordsPanel = () => {
   const activeSession = sessions.find(session => session.id === activeSessionId);
   const keywords = useMemo(() => buildFloatingKeywords(activeSessionId), [activeSessionId, isOpen, refreshKey]);
   const messageCount = activeSessionId ? getSessionMessageCount(activeSessionId) : 0;
+  const keywordSeed = keywords.slice(0, 6).map(keyword => keyword.text).join(' / ');
 
   const openPanel = () => {
     setRefreshKey(key => key + 1);
@@ -89,28 +91,42 @@ export const FloatingKeywordsPanel = () => {
               </div>
 
               {keywords.length === 0 ? <EmptyState /> : (
-                <div className="relative h-[420px] overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-white/60 via-indigo-50/40 to-sky-50/45 shadow-inner">
-                  <div className="absolute inset-0 opacity-60" style={{ background: 'radial-gradient(circle at 25% 30%, rgba(99,102,241,0.12), transparent 28%), radial-gradient(circle at 78% 62%, rgba(14,165,233,0.13), transparent 30%)' }} />
-                  <div className="absolute inset-x-8 top-1/2 h-px bg-white/50 blur-[1px]" />
-                  {keywords.map(keyword => (
-                    <button
-                      key={keyword.text}
-                      type="button"
-                      className="floating-keyword absolute rounded-full border border-white/60 bg-white/55 px-3 py-1.5 font-black text-slate-700 shadow-lg backdrop-blur-md transition hover:scale-110 hover:bg-white/80"
-                      style={{
-                        left: `${keyword.x}%`,
-                        top: `${keyword.y}%`,
-                        transform: 'translate(-50%, -50%)',
-                        fontSize: `${keyword.size}px`,
-                        opacity: keyword.opacity,
-                        animationDelay: `${keyword.delay}s`,
-                      }}
-                      title={`重要度: ${keyword.score.toFixed(1)}`}
-                    >
-                      {keyword.text}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <div className="relative h-[420px] overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-white/60 via-indigo-50/40 to-sky-50/45 shadow-inner">
+                    <div className="absolute inset-0 opacity-60" style={{ background: 'radial-gradient(circle at 25% 30%, rgba(99,102,241,0.12), transparent 28%), radial-gradient(circle at 78% 62%, rgba(14,165,233,0.13), transparent 30%)' }} />
+                    <div className="absolute inset-x-8 top-1/2 h-px bg-white/50 blur-[1px]" />
+                    {keywords.map(keyword => (
+                      <button
+                        key={keyword.text}
+                        type="button"
+                        className="floating-keyword absolute rounded-full border border-white/60 bg-white/55 px-3 py-1.5 font-black text-slate-700 shadow-lg backdrop-blur-md transition hover:scale-110 hover:bg-white/80"
+                        style={{
+                          left: `${keyword.x}%`,
+                          top: `${keyword.y}%`,
+                          transform: 'translate(-50%, -50%)',
+                          fontSize: `${keyword.size}px`,
+                          opacity: keyword.opacity,
+                          animationDelay: `${keyword.delay}s`,
+                        }}
+                        title={`重要度: ${keyword.score.toFixed(1)}`}
+                      >
+                        {keyword.text}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openSelfReturnNote({
+                      sessionId: activeSessionId,
+                      kind: 'question',
+                      seedText: `この言葉の水面を見て、私はどう思う？\n\n浮かんだ言葉: ${keywordSeed}`,
+                    })}
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-xs font-black text-white shadow-lg shadow-slate-900/10 active:scale-[0.98]"
+                  >
+                    <MessageSquareQuote size={14} />
+                    この水面に「どう思う？」を貼る
+                  </button>
+                </>
               )}
 
               <p className="mt-4 text-[11px] font-bold leading-relaxed text-slate-400">

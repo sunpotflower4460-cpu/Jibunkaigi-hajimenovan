@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, MessageSquareQuote, Plus, StickyNote, Trash2, X } from 'lucide-react';
 import { createStickyNote, deleteStickyNote, loadStickyNotes, STICKY_NOTE_TEMPLATES } from '../services/stickyNoteStore';
 import { loadState } from '../services/storage';
+import { subscribeSelfReturnNote } from '../utils/selfReturn';
 import type { StickyNote as StickyNoteType, StickyNoteKind } from '../types';
 
 const formatDate = (timestamp: number) => {
@@ -72,6 +73,17 @@ export const StickyNotesPanel = () => {
     setErrorMessage(null);
     setIsOpen(true);
   };
+
+  useEffect(() => {
+    return subscribeSelfReturnNote(payload => {
+      setNotes(loadStickyNotes());
+      setSelectedSessionId(payload.sessionId || '');
+      setSelectedKind(payload.kind || 'question');
+      setContent((payload.seedText || '私はどう思う？').slice(0, 220));
+      setErrorMessage(null);
+      setIsOpen(true);
+    });
+  }, []);
 
   const addNote = () => {
     const text = content.trim();
