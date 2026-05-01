@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Archive, BookOpen, RefreshCw, Sparkles, StickyNote, X } from 'lucide-react';
+import { Archive, BookOpen, MessageSquareQuote, RefreshCw, Sparkles, StickyNote, X } from 'lucide-react';
 import { buildThemeArchive, type ThemeStat } from '../services/themeArchive';
+import { openSelfReturnNote } from '../utils/selfReturn';
 
 const formatDate = (timestamp: number) => {
   try {
@@ -37,6 +38,8 @@ export const ThemeArchivePanel = () => {
     setRefreshKey(key => key + 1);
     setIsOpen(true);
   };
+
+  const seedThemeText = archive.themes.slice(0, 5).map(theme => theme.keyword).join(' / ');
 
   return (
     <>
@@ -107,11 +110,24 @@ export const ThemeArchivePanel = () => {
                     <p className="mt-2 text-xs font-bold leading-relaxed text-slate-400">会議録や付箋が増えるほど、ここに自分の輪郭が浮かびます。</p>
                   </div>
                 ) : (
-                  <div className="flex flex-wrap gap-2.5">
-                    {archive.themes.map((theme, index) => (
-                      <ThemeChip key={theme.keyword} theme={theme} index={index} />
-                    ))}
-                  </div>
+                  <>
+                    <div className="flex flex-wrap gap-2.5">
+                      {archive.themes.map((theme, index) => (
+                        <ThemeChip key={theme.keyword} theme={theme} index={index} />
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openSelfReturnNote({
+                        kind: 'question',
+                        seedText: `この輪郭を見て、私はどう思う？\n\n浮かんでいるテーマ: ${seedThemeText}`,
+                      })}
+                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-xs font-black text-white shadow-lg shadow-slate-900/10 active:scale-[0.98]"
+                    >
+                      <MessageSquareQuote size={14} />
+                      この輪郭に「どう思う？」を貼る
+                    </button>
+                  </>
                 )}
               </section>
 
