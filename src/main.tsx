@@ -5,6 +5,7 @@ import { CloudSaveStatusBadge } from './components/CloudSaveStatusBadge';
 import { ConferenceRecordPanel } from './components/ConferenceRecordPanel';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FloatingKeywordsPanel } from './components/FloatingKeywordsPanel';
+import { MirrorAtmosphere } from './components/MirrorAtmosphere';
 import { SettingsPanel } from './components/SettingsPanel';
 import { StickyNotesPanel } from './components/StickyNotesPanel';
 import { fetchCloudState, initCloudSave, isCloudSaveConfigured } from './services/cloud/firebaseCloud';
@@ -25,6 +26,7 @@ const renderApp = () => {
   root.render(
     <React.StrictMode>
       <ErrorBoundary>
+        <MirrorAtmosphere />
         <AppStable />
         <CloudSaveStatusBadge />
         <SettingsPanel />
