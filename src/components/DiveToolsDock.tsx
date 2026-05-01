@@ -22,6 +22,17 @@ const isIntroScreenVisible = () => {
   return bodyText.includes('会議をはじめる') && bodyText.includes('利用規約');
 };
 
+const markLegacyButtons = () => {
+  for (const label of LEGACY_BUTTON_LABELS) {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(`button[aria-label="${label}"]`);
+    buttons.forEach(button => {
+      button.dataset.legacyDiveTool = 'true';
+      button.setAttribute('aria-hidden', 'true');
+      button.tabIndex = -1;
+    });
+  }
+};
+
 export const DiveToolsDock = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isIntroVisible, setIsIntroVisible] = useState(() => {
@@ -43,23 +54,10 @@ export const DiveToolsDock = () => {
   }, []);
 
   useEffect(() => {
-    const legacyButtons = LEGACY_BUTTON_LABELS
-      .map(label => document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`))
-      .filter((button): button is HTMLButtonElement => Boolean(button));
-
-    for (const button of legacyButtons) {
-      button.dataset.legacyDiveTool = 'true';
-      button.setAttribute('aria-hidden', 'true');
-      button.tabIndex = -1;
-    }
-
-    return () => {
-      for (const button of legacyButtons) {
-        delete button.dataset.legacyDiveTool;
-        button.removeAttribute('aria-hidden');
-        button.removeAttribute('tabindex');
-      }
-    };
+    markLegacyButtons();
+    const observer = new MutationObserver(markLegacyButtons);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, []);
 
   const handleOpenTool = (toolId: DiveToolId) => {
