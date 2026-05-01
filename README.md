@@ -14,10 +14,10 @@
 - 会話履歴
 - セッション一覧
 - 端末内保存（localStorage + IndexedDB）
-- **mock AI 応答**（生成AI本接続は今後のフェーズで対応）
 - Firebase環境変数が未設定の場合は端末内保存のみで動作
 - GitHub Actions CI（typecheck / build）
 - Vercel 用設定
+- Cloudflare Workers Previewでも確認可能
 
 **現在の起動正本は `AppStable.tsx` です。**（`App.tsx` は旧版/退避用）
 
@@ -49,14 +49,14 @@ GitHub Actions CI が pull request 上で実際に走り、以下が成功する
 
 ## Phase 1.6: 端末内保存の強化
 
-初期版ではクラウド保存ではなく、端末内保存を強化しています。
+初期版では、まず端末内保存を強化しています。
 
 - localStorage に保存
 - IndexedDB にも同じ状態を保存
 - 起動時に IndexedDB 側の保存が新しければ localStorage へ復元
 - ログインなしで端末内に残る設計
 
-注意: これはクラウド同期ではありません。別端末・別ブラウザには引き継がれません。Safariやアプリ内ブラウザのサイトデータを削除した場合、保存データが消える可能性があります。
+注意: 端末内保存だけでは別端末・別ブラウザには引き継がれません。Safariやアプリ内ブラウザのサイトデータを削除した場合、保存データが消える可能性があります。
 
 ## Phase 2A: Firebaseクラウド保存の設計
 
@@ -79,13 +79,26 @@ Firebase環境変数が設定されている場合だけ、匿名ログインと
 - `.env.example` を追加
 - 手動セットアップ手順は `docs/firebase-manual-setup.md`
 
-## 初期版でやらないこと
+## Phase 2C: はじめの版の体験強化
 
-- Gemini API の本接続
+- 鏡感のあるUI演出
+- イルカのシルエット演出
+- 言葉の水面
+- 会議録
+- どう思う？付箋
+- 自分の輪郭
+- 潜るメニュー
+- OTHERSの整合性修正
+- 保存/旧データ耐性の強化
+
+## 初期版でまだ入れないこと
+
 - ログインUI
 - 課金
 - App Store 提出
 - Node-AI-Z / AETERNA 接続
+
+生成AIへの本接続は、App Store申請前の別Phaseで安全に入れる予定です。APIキーはブラウザ側コードへ置かず、サーバー側経由にします。
 
 ## 開発コマンド
 
@@ -111,9 +124,7 @@ Firebase環境変数を登録した場合のみ、Firestoreにも保存します
 
 ## AI接続について
 
-初期版は mock AI です。
-
-Gemini API などの本接続は Phase 2 以降で、Vercel Serverless Function 経由にします。APIキーをブラウザ側のコードへ置かない方針です。
+Gemini API などの本接続は、Vercel Serverless Function または同等のサーバー側処理を経由する方針です。APIキーをブラウザ側のコードへ置かない方針です。
 
 ## 手動ゲート
 
@@ -133,7 +144,11 @@ Gemini API などの本接続は Phase 2 以降で、Vercel Serverless Function 
 
 ## QAチェックリスト
 
-提出前・実機確認前のチェック項目は `docs/qa-checklist.md` を参照してください。
+リリース前の実機確認は、以下を使います。
+
+- 網羅版: `docs/release-qa-checklist.md`
+- 最短手順版: `docs/release-qa-short-route.md`
+- 旧チェックリスト: `docs/qa-checklist.md`
 
 ## ご利用上の注意
 
