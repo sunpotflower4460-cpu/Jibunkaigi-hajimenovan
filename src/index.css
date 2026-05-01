@@ -46,15 +46,20 @@ button {
   cursor: pointer;
   transform: translateZ(0);
   transition:
-    transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 160ms ease,
-    background-color 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease;
+    transform 190ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 170ms ease,
+    background-color 190ms ease,
+    box-shadow 190ms ease,
+    border-color 190ms ease,
+    filter 190ms ease;
+}
+
+button:hover:not(:disabled) {
+  filter: saturate(1.03) brightness(1.01);
 }
 
 button:active:not(:disabled) {
-  transform: translateY(1px) scale(0.985);
+  transform: translateY(1px) scale(0.982);
 }
 
 button:disabled {
@@ -65,10 +70,10 @@ textarea,
 input,
 select {
   transition:
-    box-shadow 180ms ease,
-    border-color 180ms ease,
-    background-color 180ms ease,
-    transform 160ms ease;
+    box-shadow 190ms ease,
+    border-color 190ms ease,
+    background-color 190ms ease,
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 textarea:focus,
@@ -87,7 +92,9 @@ select:focus {
   min-height: 100dvh;
   overflow-x: hidden;
   overflow-y: visible;
-  background: linear-gradient(175deg, #f2f6fa 0%, #e6ecf3 30%, #dce4ee 50%, #d3dce8 70%, #e0e7f0 100%);
+  background:
+    linear-gradient(175deg, rgba(248, 251, 255, 0.94) 0%, rgba(230, 237, 247, 0.94) 32%, rgba(220, 228, 240, 0.94) 58%, rgba(232, 239, 247, 0.94) 100%),
+    radial-gradient(circle at 22% 20%, rgba(255, 255, 255, 0.88), transparent 34%);
 }
 
 .lake-bg .flex-1 {
@@ -122,9 +129,88 @@ select:focus {
   will-change: opacity, transform;
 }
 
+.mirror-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  mix-blend-mode: screen;
+}
+
+.mirror-atmosphere__glow {
+  position: absolute;
+  width: 42vmax;
+  height: 42vmax;
+  border-radius: 999px;
+  filter: blur(34px);
+  opacity: 0.28;
+  animation: mirror-glow 16s ease-in-out infinite;
+}
+
+.mirror-atmosphere__glow--left {
+  left: -18vmax;
+  top: 8vh;
+  background: radial-gradient(circle, rgba(147, 197, 253, 0.62), transparent 64%);
+}
+
+.mirror-atmosphere__glow--right {
+  right: -20vmax;
+  bottom: 3vh;
+  background: radial-gradient(circle, rgba(196, 181, 253, 0.5), transparent 64%);
+  animation-delay: -7s;
+}
+
+.mirror-atmosphere__sheen {
+  position: absolute;
+  left: -18%;
+  width: 140%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+  transform: rotate(-7deg);
+  opacity: 0.42;
+  animation: mirror-sheen 13s ease-in-out infinite;
+}
+
+.mirror-atmosphere__sheen--one {
+  top: 24%;
+}
+
+.mirror-atmosphere__sheen--two {
+  top: 63%;
+  animation-delay: -5.5s;
+  opacity: 0.25;
+}
+
+.mirror-atmosphere__waterline {
+  position: absolute;
+  inset: auto 10% 18% 10%;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.36), transparent);
+  filter: blur(9px);
+  opacity: 0.5;
+  animation: waterline-breathe 8s ease-in-out infinite;
+}
+
 @keyframes water-shimmer {
   0%, 100% { opacity: 0.35; transform: scale(1); }
   50% { opacity: 0.56; transform: scale(1.03); }
+}
+
+@keyframes mirror-glow {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.24; }
+  50% { transform: translate3d(2.5vw, -2vh, 0) scale(1.06); opacity: 0.34; }
+}
+
+@keyframes mirror-sheen {
+  0%, 100% { transform: translateX(-3%) rotate(-7deg); opacity: 0.18; }
+  50% { transform: translateX(3%) rotate(-7deg); opacity: 0.46; }
+}
+
+@keyframes waterline-breathe {
+  0%, 100% { transform: scaleX(0.92); opacity: 0.35; }
+  50% { transform: scaleX(1.05); opacity: 0.58; }
 }
 
 @keyframes soft-rise {
@@ -141,11 +227,26 @@ select:focus {
 @keyframes gentle-pop {
   from {
     opacity: 0;
-    transform: translateY(-4px) scale(0.98);
+    transform: translateY(10px) scale(0.975);
+    filter: blur(7px);
   }
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes mirror-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.965);
+    filter: blur(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
@@ -159,56 +260,70 @@ select:focus {
 }
 
 .neu-convex-sm {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(243, 247, 251, 0.78));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(243, 247, 251, 0.76));
   box-shadow:
-    2px 2px 6px rgba(174, 188, 206, 0.2),
-    -2px -2px 6px rgba(255, 255, 255, 0.85),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+    2px 2px 6px rgba(174, 188, 206, 0.18),
+    -2px -2px 6px rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px) saturate(1.04);
+  border: 1px solid rgba(255, 255, 255, 0.62);
   transition:
-    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 180ms ease,
-    background 180ms ease,
-    border-color 180ms ease;
+    transform 190ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 190ms ease,
+    background 190ms ease,
+    border-color 190ms ease;
 }
 
 .neu-convex-sm:hover {
   box-shadow:
-    3px 3px 10px rgba(174, 188, 206, 0.22),
-    -3px -3px 10px rgba(255, 255, 255, 0.9),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    4px 4px 14px rgba(174, 188, 206, 0.2),
+    -4px -4px 14px rgba(255, 255, 255, 0.92),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .neu-concave {
-  background: linear-gradient(145deg, rgba(230, 236, 244, 0.45), rgba(240, 245, 250, 0.45));
+  background: linear-gradient(145deg, rgba(230, 236, 244, 0.43), rgba(240, 245, 250, 0.47));
   box-shadow:
-    inset 2px 2px 6px rgba(174, 188, 206, 0.2),
-    inset -2px -2px 6px rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+    inset 2px 2px 6px rgba(174, 188, 206, 0.18),
+    inset -2px -2px 7px rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.38);
 }
 
 .neu-pressed {
-  background: linear-gradient(145deg, rgba(224, 230, 238, 0.62), rgba(236, 241, 247, 0.55));
+  background: linear-gradient(145deg, rgba(224, 230, 238, 0.6), rgba(236, 241, 247, 0.56));
   box-shadow:
-    inset 2px 2px 6px rgba(163, 177, 198, 0.35),
-    inset -2px -2px 6px rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+    inset 2px 2px 7px rgba(163, 177, 198, 0.33),
+    inset -2px -2px 7px rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(255, 255, 255, 0.34);
 }
 
 .glass-card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(247, 250, 253, 0.66));
+  position: relative;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(247, 250, 253, 0.64));
   box-shadow:
-    3px 3px 10px rgba(174, 188, 206, 0.2),
-    -3px -3px 10px rgba(255, 255, 255, 0.75),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  animation: gentle-pop 220ms ease-out both;
+    0 20px 60px rgba(51, 65, 85, 0.08),
+    3px 3px 10px rgba(174, 188, 206, 0.16),
+    -3px -3px 10px rgba(255, 255, 255, 0.78),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(22px) saturate(1.08);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  animation: mirror-panel-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.42), transparent 35%, rgba(255, 255, 255, 0.16) 58%, transparent 76%),
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.46), transparent 30%);
+  opacity: 0.58;
 }
 
 .mirror-reflection {
-  animation: soft-rise 240ms ease-out both;
+  animation: soft-rise 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .mirror-reflection::before {
@@ -219,13 +334,23 @@ select:focus {
   right: -8%;
   height: 48%;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
   transform: skewX(-2deg);
 }
 
 .floating-keyword {
   animation: keyword-drift 5.4s ease-in-out infinite;
   will-change: translate, transform, opacity;
+}
+
+@media (max-width: 640px) {
+  .glass-card {
+    animation-duration: 230ms;
+  }
+
+  .mirror-atmosphere__sheen {
+    opacity: 0.24;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
