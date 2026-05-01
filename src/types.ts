@@ -25,6 +25,20 @@ export type Message = {
   createdAt: number;
 };
 
+export type ConferenceRecord = {
+  id: string;
+  sessionId: string;
+  title: string;
+  topic: string;
+  keywords: string[];
+  agentNotes: Partial<Record<AgentId, string>>;
+  mirrorSummary: string;
+  selfLine: string;
+  returnQuestion: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type UserSettings = {
   displayName: string;
   introSeen: boolean;
