@@ -4,6 +4,7 @@ import AppStable from './AppStable';
 import { CloudSaveStatusBadge } from './components/CloudSaveStatusBadge';
 import { ConferenceRecordPanel } from './components/ConferenceRecordPanel';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { FloatingKeywordsPanel } from './components/FloatingKeywordsPanel';
 import { SettingsPanel } from './components/SettingsPanel';
 import { fetchCloudState, initCloudSave, isCloudSaveConfigured } from './services/cloud/firebaseCloud';
 import { hydrateLocalStorageFromIndexedDb, loadState, restoreStateToLocalStores } from './services/storage';
@@ -27,6 +28,7 @@ const renderApp = () => {
         <CloudSaveStatusBadge />
         <SettingsPanel />
         <ConferenceRecordPanel />
+        <FloatingKeywordsPanel />
       </ErrorBoundary>
     </React.StrictMode>,
   );
