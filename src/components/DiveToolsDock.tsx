@@ -17,8 +17,30 @@ const TOOLS: Array<{
 
 const LEGACY_BUTTON_LABELS = ['設定を開く', '会議録を開く', '言葉の水面を開く', 'どう思う？付箋を開く', '輪郭を開く'];
 
+const isIntroScreenVisible = () => {
+  const bodyText = document.body.innerText || '';
+  return bodyText.includes('会議をはじめる') && bodyText.includes('利用規約');
+};
+
 export const DiveToolsDock = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isIntroVisible, setIsIntroVisible] = useState(() => {
+    if (typeof document === 'undefined') return false;
+    return isIntroScreenVisible();
+  });
+
+  useEffect(() => {
+    const syncIntroVisibility = () => {
+      const nextVisible = isIntroScreenVisible();
+      setIsIntroVisible(nextVisible);
+      if (nextVisible) setIsOpen(false);
+    };
+
+    syncIntroVisibility();
+    const observer = new MutationObserver(syncIntroVisibility);
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const legacyButtons = LEGACY_BUTTON_LABELS
@@ -44,6 +66,8 @@ export const DiveToolsDock = () => {
     setIsOpen(false);
     window.setTimeout(() => openDiveTool(toolId), 80);
   };
+
+  if (isIntroVisible) return null;
 
   return (
     <div className="dive-tools-dock fixed bottom-[calc(3.3rem+env(safe-area-inset-bottom))] right-3 z-[120] flex flex-col items-end gap-2">
