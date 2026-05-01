@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import AppStable from './AppStable';
 import { CloudSaveStatusBadge } from './components/CloudSaveStatusBadge';
 import { ConferenceRecordPanel } from './components/ConferenceRecordPanel';
+import { DiveToolsDock } from './components/DiveToolsDock';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FloatingKeywordsPanel } from './components/FloatingKeywordsPanel';
 import { MirrorAtmosphere } from './components/MirrorAtmosphere';
@@ -35,6 +36,7 @@ const renderApp = () => {
         <FloatingKeywordsPanel />
         <StickyNotesPanel />
         <ThemeArchivePanel />
+        <DiveToolsDock />
       </ErrorBoundary>
     </React.StrictMode>,
   );
