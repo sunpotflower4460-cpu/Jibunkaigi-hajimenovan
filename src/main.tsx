@@ -10,11 +10,13 @@ import { MirrorAtmosphere } from './components/MirrorAtmosphere';
 import { SettingsPanel } from './components/SettingsPanel';
 import { StickyNotesPanel } from './components/StickyNotesPanel';
 import { ThemeArchivePanel } from './components/ThemeArchivePanel';
+import { TitleDolphinPresence } from './components/TitleDolphinPresence';
 import { fetchCloudState, initCloudSave, isCloudSaveConfigured } from './services/cloud/firebaseCloud';
 import { hydrateLocalStorageFromIndexedDb, loadState, restoreStateToLocalStores } from './services/storage';
 import { installPageAutoScroll } from './utils/installPageAutoScroll';
 import './index.css';
 import './dive-tools-accessibility.css';
+import './title-dolphin-presence.css';
 
 installPageAutoScroll();
 
@@ -30,6 +32,7 @@ const renderApp = () => {
     <React.StrictMode>
       <ErrorBoundary>
         <MirrorAtmosphere />
+        <TitleDolphinPresence />
         <AppStable />
         <CloudSaveStatusBadge />
         <SettingsPanel />
