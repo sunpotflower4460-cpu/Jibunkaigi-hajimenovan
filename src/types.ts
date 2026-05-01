@@ -38,6 +38,9 @@ export type MirrorMapNode = {
 export type MirrorAgentHint = {
   agentId: AgentId;
   focus: string;
+  frameworkName?: string;
+  lenses?: string[];
+  outputRule?: string;
   nodes: MirrorMapNode[];
   caution?: string;
 };
