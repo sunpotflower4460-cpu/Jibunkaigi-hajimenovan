@@ -12,6 +12,13 @@ export type FloatingKeyword = {
   delay: number;
 };
 
+type PlacedRect = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+};
+
 const STOP_WORDS = new Set([
   'これ', 'それ', 'あれ', 'ここ', 'そこ', 'こと', 'もの', 'ため', 'よう', 'さん', 'です', 'ます', 'する', 'した', 'して', 'ある', 'いる', 'ない', '思う', '感じ', '自分', '今日', '今', '一つ', '全部', '少し', 'かなり', 'ちゃんと', 'なんか', 'だけど', 'でも', 'そして', 'それで', 'この', 'その', 'あの', 'から', 'まで', 'より', 'ので', 'なら', 'には', 'では', 'とも', 'として', 'という', 'みたい', 'アプリ', 'AI', 'mock', 'あなた', 'わたし', '私', '僕', '俺', '会議', '心の鏡', 'OTHERS'
 ]);
@@ -39,8 +46,60 @@ const tokenize = (text: string) => {
     .flatMap(token => token.split(/(?=[A-ZＡ-Ｚ])/))
     .map(token => token.trim())
     .filter(Boolean)
-    .filter(token => token.length >= 2 && token.length <= 14)
+    .filter(token => token.length >= 2 && token.length <= 10)
     .filter(token => !STOP_WORDS.has(token));
+};
+
+const rectsOverlap = (a: PlacedRect, b: PlacedRect) => {
+  return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+};
+
+const makeRect = (x: number, y: number, text: string, size: number): PlacedRect => {
+  const width = clamp(text.length * size * 0.72 + 24, 48, 180);
+  const height = clamp(size * 1.7 + 14, 34, 76);
+  return {
+    left: x - width / 2,
+    right: x + width / 2,
+    top: y - height / 2,
+    bottom: y + height / 2,
+  };
+};
+
+const findKeywordPosition = ({
+  targetSessionId,
+  text,
+  index,
+  size,
+  normalized,
+  placed,
+}: {
+  targetSessionId: string;
+  text: string;
+  index: number;
+  size: number;
+  normalized: number;
+  placed: PlacedRect[];
+}) => {
+  const radiusBase = index < 3 ? 18 : index < 8 ? 28 : 36;
+  const centerBias = normalized * 9;
+  const maxAttempts = 52;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const hash = hashString(`${targetSessionId}:${text}:${index}:${attempt}`);
+    const angle = ((hash % 6283) / 1000);
+    const radius = radiusBase + ((hash >>> 8) % 18) - centerBias + attempt * 0.45;
+    const x = clamp(50 + Math.cos(angle) * radius, 14, 86);
+    const y = clamp(50 + Math.sin(angle) * radius * 0.72, 16, 84);
+    const rect = makeRect(x, y, text, size);
+    const hasOverlap = placed.some(existing => rectsOverlap(existing, rect));
+
+    if (!hasOverlap) {
+      placed.push(rect);
+      return { x, y };
+    }
+  }
+
+  return null;
 };
 
 export const getRecentSessions = (): Session[] => {
@@ -75,27 +134,39 @@ export const buildFloatingKeywords = (sessionId?: string): FloatingKeyword[] => 
 
   const entries = [...counts.entries()]
     .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)
-    .slice(0, 18);
+    .slice(0, 12);
 
   const maxScore = Math.max(...entries.map(([, score]) => score), 1);
+  const placed: PlacedRect[] = [];
+  const results: FloatingKeyword[] = [];
 
-  return entries.map(([text, score], index) => {
-    const hash = hashString(`${targetSessionId}:${text}:${index}`);
+  for (const [index, [text, score]] of entries.entries()) {
     const normalized = score / maxScore;
-    const centerPull = normalized * 10;
-    const x = clamp(12 + (hash % 74) - centerPull / 2, 6, 86);
-    const y = clamp(14 + ((hash >>> 8) % 66) - centerPull / 3, 8, 82);
+    const size = Math.round(15 + normalized * 17);
+    const position = findKeywordPosition({
+      targetSessionId,
+      text,
+      index,
+      size,
+      normalized,
+      placed,
+    });
 
-    return {
+    if (!position) continue;
+
+    const hash = hashString(`${targetSessionId}:${text}:${index}`);
+    results.push({
       text,
       score,
-      size: Math.round(13 + normalized * 19),
-      x,
-      y,
-      opacity: 0.48 + normalized * 0.44,
+      size,
+      x: position.x,
+      y: position.y,
+      opacity: 0.58 + normalized * 0.34,
       delay: (hash % 900) / 1000,
-    };
-  });
+    });
+  }
+
+  return results;
 };
 
 export const getSessionMessageCount = (sessionId: string): number => {
