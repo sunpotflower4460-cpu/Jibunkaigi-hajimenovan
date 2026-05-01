@@ -1,3 +1,26 @@
 [data-legacy-dive-tool="true"] {
   display: none !important;
 }
+
+.dive-tools-dock {
+  max-width: calc(100vw - 1rem);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dive-tools-panel {
+  max-height: min(75dvh, 34rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  .dive-tools-dock {
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: calc(3.15rem + env(safe-area-inset-bottom));
+  }
+
+  .dive-tools-panel {
+    width: min(18rem, calc(100vw - 1.5rem));
+  }
+}
