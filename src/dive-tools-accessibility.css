@@ -14,6 +14,19 @@
   -webkit-overflow-scrolling: touch;
 }
 
+html[data-dive-dialog-open="true"] .dive-tools-dock,
+body[data-dive-dialog-open="true"] .dive-tools-dock {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(0.75rem) scale(0.98);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+html[data-dive-dialog-open="true"],
+body[data-dive-dialog-open="true"] {
+  overscroll-behavior: none;
+}
+
 @media (max-width: 640px) {
   .dive-tools-dock {
     right: max(0.75rem, env(safe-area-inset-right));
