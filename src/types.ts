@@ -25,6 +25,31 @@ export type Message = {
   createdAt: number;
 };
 
+export type MirrorMapNodeKind = 'passion' | 'feeling' | 'direction' | 'contradiction' | 'avoidance' | 'theme' | 'grounding';
+
+export type MirrorMapNode = {
+  id: string;
+  kind: MirrorMapNodeKind;
+  label: string;
+  weight: number;
+  evidence: string[];
+};
+
+export type MirrorAgentHint = {
+  agentId: AgentId;
+  focus: string;
+  nodes: MirrorMapNode[];
+  caution?: string;
+};
+
+export type InternalMirrorMap = {
+  sessionId: string;
+  centerQuestion: string;
+  nodes: MirrorMapNode[];
+  agentHints: Partial<Record<AgentId, MirrorAgentHint>>;
+  updatedAt: number;
+};
+
 export type ConferenceRecord = {
   id: string;
   sessionId: string;

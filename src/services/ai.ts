@@ -1,5 +1,6 @@
 import { AGENTS } from '../data/agents';
 import type { AgentId, Message, ModeId, Reaction } from '../types';
+import { buildInternalMirrorMap, getAgentMirrorHintText } from './internalMirrorMap';
 import { analyzeMirrorSafety, getMirrorReturnQuestion, getMirrorSafetyLine } from './mirrorSafety';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -155,6 +156,12 @@ export const generateMockReply = async ({
   const lastText = getLastUserText(messages);
   const safetySignal = analyzeMirrorSafety(messages);
   const safetyReturnQuestion = getMirrorReturnQuestion(safetySignal);
+  const internalMap = buildInternalMirrorMap({
+    sessionId: messages[0]?.sessionId || 'current-session',
+    messages,
+    centerQuestion: messages.find(message => message.role === 'user')?.content || lastText,
+  });
+  const internalHint = getAgentMirrorHintText(internalMap, agentId);
 
   if (agentId === 'master') {
     return buildMirrorReply({
@@ -165,7 +172,7 @@ export const generateMockReply = async ({
     });
   }
 
-  const lead = pick(agentLead[agentId], lastText);
+  const lead = pick(agentLead[agentId], `${lastText}-${internalHint}`);
   const question = safetyReturnQuestion || agentQuestion[agentId];
   const safetyLine = getMirrorSafetyLine(safetySignal, agentId);
 
