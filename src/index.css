@@ -343,6 +343,20 @@ select:focus {
   will-change: translate, transform, opacity;
 }
 
+.dive-tools-panel {
+  animation: mirror-panel-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+body:has(.dive-tools-dock) button[aria-label="設定を開く"],
+body:has(.dive-tools-dock) button[aria-label="会議録を開く"],
+body:has(.dive-tools-dock) button[aria-label="言葉の水面を開く"],
+body:has(.dive-tools-dock) button[aria-label="どう思う？付箋を開く"],
+body:has(.dive-tools-dock) button[aria-label="輪郭を開く"] {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(8px) scale(0.92);
+}
+
 @media (max-width: 640px) {
   .glass-card {
     animation-duration: 230ms;
