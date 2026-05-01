@@ -8,6 +8,7 @@ import { FloatingKeywordsPanel } from './components/FloatingKeywordsPanel';
 import { MirrorAtmosphere } from './components/MirrorAtmosphere';
 import { SettingsPanel } from './components/SettingsPanel';
 import { StickyNotesPanel } from './components/StickyNotesPanel';
+import { ThemeArchivePanel } from './components/ThemeArchivePanel';
 import { fetchCloudState, initCloudSave, isCloudSaveConfigured } from './services/cloud/firebaseCloud';
 import { hydrateLocalStorageFromIndexedDb, loadState, restoreStateToLocalStores } from './services/storage';
 import { installPageAutoScroll } from './utils/installPageAutoScroll';
@@ -33,6 +34,7 @@ const renderApp = () => {
         <ConferenceRecordPanel />
         <FloatingKeywordsPanel />
         <StickyNotesPanel />
+        <ThemeArchivePanel />
       </ErrorBoundary>
     </React.StrictMode>,
   );
