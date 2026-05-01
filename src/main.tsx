@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import AppStable from './AppStable';
 import { CloudSaveStatusBadge } from './components/CloudSaveStatusBadge';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { SettingsPanel } from './components/SettingsPanel';
 import { fetchCloudState, initCloudSave, isCloudSaveConfigured } from './services/cloud/firebaseCloud';
 import { hydrateLocalStorageFromIndexedDb, loadState, restoreStateToLocalStores } from './services/storage';
 import { installPageAutoScroll } from './utils/installPageAutoScroll';
@@ -18,6 +19,7 @@ const renderApp = () => {
       <ErrorBoundary>
         <AppStable />
         <CloudSaveStatusBadge />
+        <SettingsPanel />
       </ErrorBoundary>
     </React.StrictMode>,
   );
