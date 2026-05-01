@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, ChevronDown, FileText, Sparkles, Trash2, X } from 'lucide-react';
+import { BookOpen, ChevronDown, FileText, MessageSquareQuote, Sparkles, Trash2, X } from 'lucide-react';
 import { createConferenceRecord } from '../services/conferenceRecord';
 import { deleteConferenceRecord, loadConferenceRecords, upsertConferenceRecord } from '../services/conferenceRecordStore';
 import { loadState } from '../services/storage';
+import { openSelfReturnNote } from '../utils/selfReturn';
 import type { ConferenceRecord, Session } from '../types';
 
 const formatDate = (timestamp: number) => {
@@ -51,6 +52,19 @@ const RecordCard = ({ record, onDelete }: { record: ConferenceRecord; onDelete: 
         <p>{record.returnQuestion}</p>
       </section>
     </div>
+
+    <button
+      type="button"
+      onClick={() => openSelfReturnNote({
+        sessionId: record.sessionId,
+        kind: 'question',
+        seedText: `私はどう思う？\n\n${record.returnQuestion}`,
+      })}
+      className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/70 bg-slate-900 px-4 py-3 text-xs font-black text-white shadow-lg shadow-slate-900/10 active:scale-[0.98]"
+    >
+      <MessageSquareQuote size={14} />
+      この会議録に「どう思う？」を貼る
+    </button>
   </article>
 );
 
