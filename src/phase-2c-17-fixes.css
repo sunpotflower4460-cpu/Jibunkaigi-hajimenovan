@@ -1,0 +1,21 @@
+[data-intro-legal-soft-hidden="true"] {
+  display: none !important;
+}
+
+.floating-keyword {
+  max-width: min(13rem, 56vw);
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  line-height: 1.15;
+  text-align: center;
+  transform-origin: center;
+}
+
+@media (max-width: 640px) {
+  .floating-keyword {
+    max-width: 10.5rem;
+    padding-inline: 0.8rem !important;
+    line-height: 1.1;
+  }
+}
