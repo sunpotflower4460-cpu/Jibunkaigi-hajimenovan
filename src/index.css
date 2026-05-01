@@ -37,7 +37,8 @@ body {
 
 button,
 textarea,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -61,7 +62,8 @@ button:disabled {
 }
 
 textarea,
-input {
+input,
+select {
   transition:
     box-shadow 180ms ease,
     border-color 180ms ease,
@@ -70,7 +72,8 @@ input {
 }
 
 textarea:focus,
-input:focus {
+input:focus,
+select:focus {
   transform: translateY(-1px);
 }
 
@@ -146,6 +149,15 @@ input:focus {
   }
 }
 
+@keyframes keyword-drift {
+  0%, 100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -8px;
+  }
+}
+
 .neu-convex-sm {
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(243, 247, 251, 0.78));
   box-shadow:
@@ -209,6 +221,11 @@ input:focus {
   pointer-events: none;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
   transform: skewX(-2deg);
+}
+
+.floating-keyword {
+  animation: keyword-drift 5.4s ease-in-out infinite;
+  will-change: translate, transform, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {
