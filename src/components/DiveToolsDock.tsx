@@ -17,33 +17,55 @@ const TOOLS: Array<{
 
 const LEGACY_BUTTON_LABELS = ['設定を開く', '会議録を開く', '言葉の水面を開く', 'どう思う？付箋を開く', '輪郭を開く'];
 
-export const DiveToolsDock = () => {
-  const [isOpen, setIsOpen] = useState(false);
+const isIntroScreenVisible = () => {
+  const bodyText = document.body.innerText || '';
+  return bodyText.includes('会議をはじめる') && bodyText.includes('利用規約');
+};
 
-  useEffect(() => {
-    const legacyButtons = LEGACY_BUTTON_LABELS
-      .map(label => document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`))
-      .filter((button): button is HTMLButtonElement => Boolean(button));
-
-    for (const button of legacyButtons) {
+const markLegacyButtons = () => {
+  for (const label of LEGACY_BUTTON_LABELS) {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(`button[aria-label="${label}"]`);
+    buttons.forEach(button => {
       button.dataset.legacyDiveTool = 'true';
       button.setAttribute('aria-hidden', 'true');
       button.tabIndex = -1;
-    }
+    });
+  }
+};
 
-    return () => {
-      for (const button of legacyButtons) {
-        delete button.dataset.legacyDiveTool;
-        button.removeAttribute('aria-hidden');
-        button.removeAttribute('tabindex');
-      }
+export const DiveToolsDock = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isIntroVisible, setIsIntroVisible] = useState(() => {
+    if (typeof document === 'undefined') return false;
+    return isIntroScreenVisible();
+  });
+
+  useEffect(() => {
+    const syncIntroVisibility = () => {
+      const nextVisible = isIntroScreenVisible();
+      setIsIntroVisible(nextVisible);
+      if (nextVisible) setIsOpen(false);
     };
+
+    syncIntroVisibility();
+    const observer = new MutationObserver(syncIntroVisibility);
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    markLegacyButtons();
+    const observer = new MutationObserver(markLegacyButtons);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, []);
 
   const handleOpenTool = (toolId: DiveToolId) => {
     setIsOpen(false);
     window.setTimeout(() => openDiveTool(toolId), 80);
   };
+
+  if (isIntroVisible) return null;
 
   return (
     <div className="dive-tools-dock fixed bottom-[calc(3.3rem+env(safe-area-inset-bottom))] right-3 z-[120] flex flex-col items-end gap-2">

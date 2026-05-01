@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AlertCircle, Cloud, CloudOff, CreditCard, Database, KeyRound, Megaphone, Settings, ShieldCheck, X } from 'lucide-react';
 import { getCloudSaveSnapshot, isCloudSaveConfigured, subscribeCloudSaveStatus, type CloudSaveSnapshot } from '../services/cloud/firebaseCloud';
+import { subscribeDiveTool } from '../utils/diveTools';
 
 const statusLabel = (snapshot: CloudSaveSnapshot) => {
   switch (snapshot.status) {
@@ -49,6 +50,7 @@ export const SettingsPanel = () => {
   const [snapshot, setSnapshot] = useState<CloudSaveSnapshot>(() => getCloudSaveSnapshot());
 
   useEffect(() => subscribeCloudSaveStatus(setSnapshot), []);
+  useEffect(() => subscribeDiveTool('settings', () => setIsOpen(true)), []);
 
   const cloudConfigured = isCloudSaveConfigured();
   const cloudDescription = cloudConfigured
@@ -111,8 +113,8 @@ export const SettingsPanel = () => {
               <SettingRow
                 icon={<KeyRound size={16} />}
                 title="AI API接続"
-                description="現在はmock応答です。Gemini APIなどの本接続は、APIキーをアプリ内へ直接入れず、サーバー経由で追加する予定です。"
-                badge="未接続"
+                description="APIキーをアプリ内へ直接入れず、サーバー経由で安全に接続します。接続状態はここに表示されます。"
+                badge="準備中"
               />
 
               <SettingRow

@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Archive, BookOpen, MessageSquareQuote, RefreshCw, Sparkles, StickyNote, X } from 'lucide-react';
 import { buildThemeArchive, type ThemeStat } from '../services/themeArchive';
+import { subscribeDiveTool } from '../utils/diveTools';
 import { openSelfReturnNote } from '../utils/selfReturn';
 
 const formatDate = (timestamp: number) => {
@@ -38,6 +39,8 @@ export const ThemeArchivePanel = () => {
     setRefreshKey(key => key + 1);
     setIsOpen(true);
   };
+
+  useEffect(() => subscribeDiveTool('outline', openPanel), []);
 
   const seedThemeText = archive.themes.slice(0, 5).map(theme => theme.keyword).join(' / ');
 

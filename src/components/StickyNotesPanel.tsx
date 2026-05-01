@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, MessageSquareQuote, Plus, StickyNote, Trash2, X } from 'lucide-react';
 import { createStickyNote, deleteStickyNote, loadStickyNotes, STICKY_NOTE_TEMPLATES } from '../services/stickyNoteStore';
 import { loadState } from '../services/storage';
+import { subscribeDiveTool } from '../utils/diveTools';
 import { subscribeSelfReturnNote } from '../utils/selfReturn';
 import type { StickyNote as StickyNoteType, StickyNoteKind } from '../types';
 
@@ -73,6 +74,8 @@ export const StickyNotesPanel = () => {
     setErrorMessage(null);
     setIsOpen(true);
   };
+
+  useEffect(() => subscribeDiveTool('notes', openPanel), []);
 
   useEffect(() => {
     return subscribeSelfReturnNote(payload => {

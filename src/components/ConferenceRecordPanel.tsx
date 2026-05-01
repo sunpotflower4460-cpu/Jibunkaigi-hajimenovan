@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, ChevronDown, FileText, MessageSquareQuote, Sparkles, Trash2, X } from 'lucide-react';
 import { createConferenceRecord } from '../services/conferenceRecord';
 import { deleteConferenceRecord, loadConferenceRecords, upsertConferenceRecord } from '../services/conferenceRecordStore';
 import { loadState } from '../services/storage';
+import { subscribeDiveTool } from '../utils/diveTools';
 import { openSelfReturnNote } from '../utils/selfReturn';
 import type { ConferenceRecord, Session } from '../types';
 
@@ -89,6 +90,8 @@ export const ConferenceRecordPanel = () => {
     setErrorMessage(null);
     setIsOpen(true);
   };
+
+  useEffect(() => subscribeDiveTool('records', openPanel), []);
 
   const createRecord = () => {
     const freshState = loadState();
@@ -181,7 +184,7 @@ export const ConferenceRecordPanel = () => {
                   </button>
                 </div>
                 <p className="mt-3 text-[11px] font-bold leading-relaxed text-slate-400">
-                  現在はローカル生成です。Gemini API接続後は、より深い要約に差し替えられます。
+                  この画面では、今の会話から会議録を端末内に作成します。
                   {activeSession && ` 選択中: ${activeSession.title} / 会議録 ${activeRecordCount}件`}
                 </p>
                 {errorMessage && <p className="mt-3 rounded-2xl bg-rose-50 p-3 text-xs font-black text-rose-500">{errorMessage}</p>}

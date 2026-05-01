@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, MessageSquareQuote, Sparkles, Waves, X } from 'lucide-react';
 import { buildFloatingKeywords, getRecentSessions, getSessionMessageCount } from '../services/keywordField';
+import { subscribeDiveTool } from '../utils/diveTools';
 import { openSelfReturnNote } from '../utils/selfReturn';
 
 const EmptyState = () => (
@@ -28,6 +29,8 @@ export const FloatingKeywordsPanel = () => {
     setSelectedSessionId('');
     setIsOpen(true);
   };
+
+  useEffect(() => subscribeDiveTool('words', openPanel), []);
 
   return (
     <>
@@ -130,7 +133,7 @@ export const FloatingKeywordsPanel = () => {
               )}
 
               <p className="mt-4 text-[11px] font-bold leading-relaxed text-slate-400">
-                現在はローカル抽出です。会議録で保存された重要語は強めに反映されます。次のPhaseで、タップした言葉から元の発言へ戻る導線を追加できます。
+                会話や会議録に残った言葉から、短い語だけを水面に浮かべています。
               </p>
             </div>
           </section>
