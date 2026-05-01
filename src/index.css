@@ -193,6 +193,86 @@ select:focus {
   animation: waterline-breathe 8s ease-in-out infinite;
 }
 
+.mirror-atmosphere__ripple {
+  position: absolute;
+  width: 38vmin;
+  height: 12vmin;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 50%;
+  filter: blur(1px);
+  opacity: 0.22;
+  transform: rotate(-8deg);
+  animation: mirror-ripple 11s ease-in-out infinite;
+}
+
+.mirror-atmosphere__ripple--one {
+  left: 12%;
+  top: 31%;
+}
+
+.mirror-atmosphere__ripple--two {
+  right: 9%;
+  bottom: 24%;
+  width: 30vmin;
+  height: 9vmin;
+  animation-delay: -5s;
+  opacity: 0.16;
+}
+
+.mirror-atmosphere__dolphin {
+  position: absolute;
+  width: clamp(72px, 13vw, 150px);
+  color: rgba(73, 103, 142, 0.16);
+  filter: blur(0.15px);
+  opacity: 0.55;
+  transform-origin: center;
+  animation: dolphin-swim 18s ease-in-out infinite;
+}
+
+.mirror-atmosphere__dolphin--one {
+  left: 12%;
+  top: 11%;
+  transform: rotate(-8deg) scale(1);
+}
+
+.mirror-atmosphere__dolphin--two {
+  right: 13%;
+  top: 18%;
+  width: clamp(58px, 10vw, 120px);
+  color: rgba(97, 87, 145, 0.13);
+  transform: rotate(172deg) scaleX(-1);
+  animation-delay: -8s;
+}
+
+.mirror-atmosphere__fairy {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.75), 0 0 28px rgba(196, 181, 253, 0.45);
+  opacity: 0.36;
+  animation: fairy-drift 12s ease-in-out infinite;
+}
+
+.mirror-atmosphere__fairy--one {
+  left: 23%;
+  top: 43%;
+}
+
+.mirror-atmosphere__fairy--two {
+  right: 24%;
+  top: 39%;
+  animation-delay: -4s;
+}
+
+.mirror-atmosphere__fairy--three {
+  left: 52%;
+  bottom: 26%;
+  animation-delay: -7s;
+  opacity: 0.24;
+}
+
 @keyframes water-shimmer {
   0%, 100% { opacity: 0.35; transform: scale(1); }
   50% { opacity: 0.56; transform: scale(1.03); }
@@ -211,6 +291,24 @@ select:focus {
 @keyframes waterline-breathe {
   0%, 100% { transform: scaleX(0.92); opacity: 0.35; }
   50% { transform: scaleX(1.05); opacity: 0.58; }
+}
+
+@keyframes mirror-ripple {
+  0%, 100% { transform: rotate(-8deg) scale(0.92); opacity: 0.11; }
+  45% { transform: rotate(-8deg) scale(1.15); opacity: 0.28; }
+  70% { transform: rotate(-8deg) scale(1.04); opacity: 0.17; }
+}
+
+@keyframes dolphin-swim {
+  0%, 100% { translate: 0 0; opacity: 0.22; }
+  40% { translate: 18px -8px; opacity: 0.42; }
+  70% { translate: 9px 4px; opacity: 0.3; }
+}
+
+@keyframes fairy-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(0.8); opacity: 0.12; }
+  45% { transform: translate3d(10px, -16px, 0) scale(1.2); opacity: 0.45; }
+  80% { transform: translate3d(-6px, -5px, 0) scale(0.95); opacity: 0.22; }
 }
 
 @keyframes soft-rise {
@@ -364,6 +462,18 @@ body:has(.dive-tools-dock) button[aria-label="輪郭を開く"] {
 
   .mirror-atmosphere__sheen {
     opacity: 0.24;
+  }
+
+  .mirror-atmosphere__dolphin {
+    opacity: 0.26;
+  }
+
+  .mirror-atmosphere__ripple {
+    opacity: 0.12;
+  }
+
+  .mirror-atmosphere__fairy {
+    opacity: 0.2;
   }
 }
 
