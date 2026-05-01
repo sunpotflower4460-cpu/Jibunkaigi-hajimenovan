@@ -16,6 +16,7 @@ import { hydrateLocalStorageFromIndexedDb, loadState, restoreStateToLocalStores 
 import { installPageAutoScroll } from './utils/installPageAutoScroll';
 import './index.css';
 import './dive-tools-accessibility.css';
+import './title-dolphin-presence.css';
 
 installPageAutoScroll();
 
