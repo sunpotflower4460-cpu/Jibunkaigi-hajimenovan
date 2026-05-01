@@ -6,6 +6,7 @@ import { ConferenceRecordPanel } from './components/ConferenceRecordPanel';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FloatingKeywordsPanel } from './components/FloatingKeywordsPanel';
 import { SettingsPanel } from './components/SettingsPanel';
+import { StickyNotesPanel } from './components/StickyNotesPanel';
 import { fetchCloudState, initCloudSave, isCloudSaveConfigured } from './services/cloud/firebaseCloud';
 import { hydrateLocalStorageFromIndexedDb, loadState, restoreStateToLocalStores } from './services/storage';
 import { installPageAutoScroll } from './utils/installPageAutoScroll';
@@ -29,6 +30,7 @@ const renderApp = () => {
         <SettingsPanel />
         <ConferenceRecordPanel />
         <FloatingKeywordsPanel />
+        <StickyNotesPanel />
       </ErrorBoundary>
     </React.StrictMode>,
   );
