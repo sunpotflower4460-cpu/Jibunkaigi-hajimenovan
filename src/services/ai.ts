@@ -1,5 +1,6 @@
 import { AGENTS } from '../data/agents';
 import type { AgentId, Message, ModeId, Reaction } from '../types';
+import { analyzeMirrorSafety, getMirrorReturnQuestion, getMirrorSafetyLine } from './mirrorSafety';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -89,6 +90,8 @@ const getLastUserText = (messages: Message[]) => {
   return [...messages].reverse().find(message => message.role === 'user')?.content || '今の気持ち';
 };
 
+const compactLines = (lines: string[]) => lines.filter(Boolean).join('\n\n');
+
 export const generateMockReply = async ({
   agentId,
   mode,
@@ -102,25 +105,44 @@ export const generateMockReply = async ({
 }) => {
   await wait(mode === 'short' ? 220 : 340);
   const lastText = getLastUserText(messages);
+  const safetySignal = analyzeMirrorSafety(messages);
+  const safetyReturnQuestion = getMirrorReturnQuestion(safetySignal);
 
   if (agentId === 'master') {
     const userMessages = messages.filter(message => message.role === 'user').slice(-3);
     const fragments = userMessages.map(message => `「${message.content.slice(0, 24)}」`).join('、');
-    return `${userName}さんのここまでの声を映すと、${fragments || 'まだ言葉になっていないもの'}の奥に、いくつかの声が並んでいるように見えます。\n\n今はひとつにまとめきらなくて大丈夫です。\n\nこの中で、今のあなたに一番近い声はどれですか？`;
+    const safetyLine = safetySignal.shouldReturnQuestion
+      ? '今はひとつにまとめきらず、反対側の声や現実の足場も少し残しておいてよさそうです。'
+      : '今はひとつにまとめきらなくて大丈夫です。';
+    return compactLines([
+      `${userName}さんのここまでの声を映すと、${fragments || 'まだ言葉になっていないもの'}の奥に、いくつかの声が並んでいるように見えます。`,
+      safetyLine,
+      safetyReturnQuestion || 'この中で、今のあなたに一番近い声はどれですか？',
+    ]);
   }
 
   const lead = pick(agentLead[agentId], lastText);
-  const question = agentQuestion[agentId];
+  const question = safetyReturnQuestion || agentQuestion[agentId];
+  const safetyLine = getMirrorSafetyLine(safetySignal, agentId);
 
   if (mode === 'short') {
-    return `${lead}\n\n${question}`;
+    return compactLines([lead, safetyLine, question]);
   }
 
   if (mode === 'long') {
-    return `${lead}\n\nその言葉は、ただの悩みというより、願い・不安・大切にしたいものが重なって出てきたものに見えます。\n\n今すぐ全部を決めなくても大丈夫です。まずは、その中で一番強く残っているものを見てみるのがよさそうです。\n\n${question}`;
+    return compactLines([
+      lead,
+      'その言葉は、ただの悩みというより、願い・不安・大切にしたいものが重なって出てきたものに見えます。',
+      safetyLine || '今すぐ全部を決めなくても大丈夫です。まずは、その中で一番強く残っているものを見てみるのがよさそうです。',
+      question,
+    ]);
   }
 
-  return `${lead}\n\n今は、全部を決めきるよりも、その奥にある本音を少しだけ見つける時間かもしれません。\n\n${question}`;
+  return compactLines([
+    lead,
+    safetyLine || '今は、全部を決めきるよりも、その奥にある本音を少しだけ見つける時間かもしれません。',
+    question,
+  ]);
 };
 
 export const generateMockReactions = async (selectedAgentId: AgentId): Promise<Partial<Record<AgentId, Reaction>>> => {
