@@ -18,9 +18,17 @@ export const DiveDialogGuard = () => {
 
     sync();
     const observer = new MutationObserver(sync);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['role', 'aria-modal'] });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['role', 'aria-modal', 'class', 'style'],
+    });
+    const interval = window.setInterval(sync, 1200);
+
     return () => {
       observer.disconnect();
+      window.clearInterval(interval);
       document.documentElement.dataset.diveDialogOpen = 'false';
       document.body.dataset.diveDialogOpen = 'false';
     };
