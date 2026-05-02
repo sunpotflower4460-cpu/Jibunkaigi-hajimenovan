@@ -16,9 +16,32 @@
 }
 
 @media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
   .floating-keyword {
     max-width: 7.5rem;
     padding-inline: 0.75rem !important;
     line-height: 1.08;
+  }
+
+  .mirror-reflection,
+  .neu-convex-sm,
+  .glass-card {
+    backdrop-filter: blur(14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
