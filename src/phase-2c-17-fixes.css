@@ -15,11 +15,31 @@
   writing-mode: horizontal-tb;
 }
 
+button {
+  touch-action: manipulation;
+}
+
+.no-scrollbar {
+  scroll-padding-inline: 1rem;
+}
+
 @media (max-width: 640px) {
   input,
   textarea,
   select {
     font-size: 16px !important;
+  }
+
+  textarea {
+    line-height: 1.48 !important;
+  }
+
+  button {
+    min-height: 2.5rem;
+  }
+
+  .no-scrollbar > button {
+    min-height: 2.75rem;
   }
 
   .floating-keyword {
@@ -32,6 +52,10 @@
   .neu-convex-sm,
   .glass-card {
     backdrop-filter: blur(14px);
+  }
+
+  .glass-card {
+    box-shadow: 2px 2px 8px rgba(174,188,206,0.18), -2px -2px 8px rgba(255,255,255,0.68), inset 0 1px 0 rgba(255,255,255,0.52);
   }
 }
 
