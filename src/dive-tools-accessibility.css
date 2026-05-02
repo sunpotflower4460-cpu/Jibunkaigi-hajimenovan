@@ -41,7 +41,18 @@ body[data-dive-dialog-open="true"] {
 }
 
 [role="dialog"][aria-modal="true"] button {
-  min-height: 2.25rem;
+  min-height: 2.5rem;
+}
+
+[role="dialog"][aria-modal="true"] header button,
+[role="dialog"][aria-modal="true"] button[aria-label="閉じる"] {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
+[role="dialog"][aria-modal="true"] select,
+[role="dialog"][aria-modal="true"] textarea {
+  line-height: 1.45;
 }
 
 @media (max-width: 640px) {
@@ -56,5 +67,10 @@ body[data-dive-dialog-open="true"] {
 
   [role="dialog"][aria-modal="true"] {
     max-width: calc(100vw - 1rem);
+  }
+
+  [role="dialog"][aria-modal="true"] section,
+  [role="dialog"][aria-modal="true"] article {
+    scroll-margin-bottom: 1rem;
   }
 }
