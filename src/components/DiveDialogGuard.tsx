@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 
 const getOpenDialogs = () => {
   if (typeof document === 'undefined') return [];
-  return Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]'));
+  const ariaDialogs = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]'));
+  const overlayDialogs = Array.from(document.querySelectorAll<HTMLElement>('[class*="fixed"][class*="inset-0"][class*="backdrop-blur"]'))
+    .filter(element => element.offsetParent !== null || element.getBoundingClientRect().width > 0);
+  return [...ariaDialogs, ...overlayDialogs];
 };
 
 export const DiveDialogGuard = () => {
