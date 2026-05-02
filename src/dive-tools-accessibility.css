@@ -15,7 +15,9 @@
 }
 
 html[data-dive-dialog-open="true"] .dive-tools-dock,
-body[data-dive-dialog-open="true"] .dive-tools-dock {
+body[data-dive-dialog-open="true"] .dive-tools-dock,
+html[data-dive-dialog-open="true"] .cloud-save-status-badge,
+body[data-dive-dialog-open="true"] .cloud-save-status-badge {
   pointer-events: none;
   opacity: 0;
   transform: translateY(0.75rem) scale(0.98);
@@ -27,6 +29,21 @@ body[data-dive-dialog-open="true"] {
   overscroll-behavior: none;
 }
 
+[role="dialog"][aria-modal="true"] {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+[role="dialog"][aria-modal="true"] button,
+[role="dialog"][aria-modal="true"] select,
+[role="dialog"][aria-modal="true"] textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+[role="dialog"][aria-modal="true"] button {
+  min-height: 2.25rem;
+}
+
 @media (max-width: 640px) {
   .dive-tools-dock {
     right: max(0.75rem, env(safe-area-inset-right));
@@ -35,5 +52,9 @@ body[data-dive-dialog-open="true"] {
 
   .dive-tools-panel {
     width: min(18rem, calc(100vw - 1.5rem));
+  }
+
+  [role="dialog"][aria-modal="true"] {
+    max-width: calc(100vw - 1rem);
   }
 }

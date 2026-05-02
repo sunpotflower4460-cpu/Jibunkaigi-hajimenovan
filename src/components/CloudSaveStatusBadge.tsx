@@ -41,7 +41,7 @@ export const CloudSaveStatusBadge = () => {
 
   return (
     <div
-      className={`fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] right-3 z-[90] flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black shadow-lg backdrop-blur-xl transition ${
+      className={`cloud-save-status-badge fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] right-3 z-[90] flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black shadow-lg backdrop-blur-xl transition ${
         isCloudActive
           ? 'border-indigo-100 bg-white/80 text-indigo-500'
           : 'border-white/60 bg-white/60 text-slate-400'
