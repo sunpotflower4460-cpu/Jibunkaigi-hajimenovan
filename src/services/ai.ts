@@ -1,10 +1,13 @@
-import { AGENTS } from '../data/agents';
+import { AGENTS, MODES } from '../data/agents';
 import type { AgentId, Message, ModeId, Reaction } from '../types';
 import { buildInternalMirrorMap, getAgentMirrorHintText } from './internalMirrorMap';
+import { callGeminiApi } from './geminiApiClient';
 import { analyzeMirrorSafety, getMirrorReturnQuestion, getMirrorSafetyLine } from './mirrorSafety';
 import { buildOthersReactions } from './othersReactions';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
+const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash';
 
 const agentLead: Record<Exclude<AgentId, 'master'>, string[]> = {
   soul: [
@@ -114,7 +117,7 @@ const buildMirrorReply = ({ messages, userName, safetyReturnQuestion, shouldRetu
   ]);
 };
 
-export const generateMockReply = async ({
+const generateLocalFallbackReply = async ({
   agentId,
   mode,
   messages,
@@ -169,7 +172,143 @@ export const generateMockReply = async ({
   ]);
 };
 
+const buildGeminiReplySystem = ({ agentId, mode, internalHint, safetyLine, safetyReturnQuestion }: {
+  agentId: AgentId;
+  mode: ModeId;
+  internalHint: string;
+  safetyLine: string;
+  safetyReturnQuestion: string;
+}) => {
+  if (agentId === 'master') {
+    return compactLines([
+      'あなたは「じぶん会議」の心の鏡です。役割は、複数の声とユーザーの言葉を統合して結論を押し付けることではなく、今見えている配置を静かに映すことです。',
+      '導かない。決めつけない。ユーザー自身がどう思うかへ返す。',
+      '5人の声を総意としてまとめず、それぞれの角度が残っていることを尊重する。',
+      '医療・診断・治療・緊急対応はしない。強い危険や自傷他害の可能性がある場合は、専門機関や身近な人への相談を促す。',
+      `長さ: ${MODES[mode].constraint}`,
+      safetyLine ? `安全上の鏡返し: ${safetyLine}` : '',
+      safetyReturnQuestion ? `最後に使える問い: ${safetyReturnQuestion}` : '',
+      '日本語で返す。前置きや箇条書きは必要な時だけ。',
+    ]);
+  }
+
+  const agent = AGENTS.find(item => item.id === agentId);
+  return compactLines([
+    agent?.prompt || '',
+    'このアプリのコンセプトは「慰める友達」ではなく「本当の自分を写す鏡」です。ユーザーの自己決定権を守り、結論を押し付けないでください。',
+    '同調しすぎない。ユーザーの言葉をそのまま増幅せず、まだ見えていない側面・矛盾・安全上の足場も必要なら静かに映してください。',
+    'キャラ口調を強くしすぎず、視点の違いとして自然に話してください。',
+    '医療・診断・治療・緊急対応はしない。強い危険や自傷他害の可能性がある場合は、専門機関や身近な人への相談を促してください。',
+    `長さ: ${MODES[mode].constraint}`,
+    internalHint ? `内部の映し方メモ: ${internalHint}` : '',
+    safetyLine ? `安全上の鏡返し: ${safetyLine}` : '',
+    safetyReturnQuestion ? `最後に使える問い: ${safetyReturnQuestion}` : '',
+    '日本語で返す。読みやすく、短めの段落で返す。最後は小さな問いか、余韻のある一文で終える。',
+  ]);
+};
+
+const buildGeminiReplyPrompt = ({ messages, userName }: { messages: Message[]; userName: string }) => {
+  const context = buildContextText(messages, userName);
+  const lastText = getLastUserText(messages);
+  return compactLines([
+    '以下は「じぶん会議」の会話履歴です。最新のユーザーの言葉へ、指定された鏡の視点で返してください。',
+    context ? `会話履歴:\n${context}` : '',
+    `最新のユーザーの言葉:\n${lastText}`,
+  ]);
+};
+
+export const generateMockReply = async ({
+  agentId,
+  mode,
+  messages,
+  userName,
+}: {
+  agentId: AgentId;
+  mode: ModeId;
+  messages: Message[];
+  userName: string;
+}) => {
+  const lastText = getLastUserText(messages);
+  const safetySignal = analyzeMirrorSafety(messages);
+  const safetyReturnQuestion = getMirrorReturnQuestion(safetySignal);
+  const internalMap = buildInternalMirrorMap({
+    sessionId: messages[0]?.sessionId || 'current-session',
+    messages,
+    centerQuestion: messages.find(message => message.role === 'user')?.content || lastText,
+  });
+  const internalHint = getAgentMirrorHintText(internalMap, agentId);
+  const safetyLine = agentId === 'master'
+    ? safetySignal.shouldReturnQuestion ? '今は結論へ寄せすぎず、反対側の声や現実の足場も水面に残す。' : ''
+    : getMirrorSafetyLine(safetySignal, agentId);
+
+  const gemini = await callGeminiApi({
+    model: GEMINI_CHAT_MODEL,
+    prompt: buildGeminiReplyPrompt({ messages, userName }),
+    systemInstruction: buildGeminiReplySystem({
+      agentId,
+      mode,
+      internalHint,
+      safetyLine,
+      safetyReturnQuestion,
+    }),
+  });
+
+  if (gemini.ok && gemini.text.trim()) {
+    return gemini.text.trim();
+  }
+
+  return generateLocalFallbackReply({ agentId, mode, messages, userName });
+};
+
+const extractJsonObject = (text: string) => {
+  const trimmed = text.trim().replace(/^```json/i, '').replace(/^```/, '').replace(/```$/g, '').trim();
+  const first = trimmed.indexOf('{');
+  const last = trimmed.lastIndexOf('}');
+  if (first < 0 || last < first) return trimmed;
+  return trimmed.slice(first, last + 1);
+};
+
+const parseGeminiReactions = (text: string, selectedAgentId: AgentId): Partial<Record<AgentId, Reaction>> => {
+  try {
+    const parsed = JSON.parse(extractJsonObject(text)) as Partial<Record<AgentId, Reaction>>;
+    const valid: Partial<Record<AgentId, Reaction>> = {};
+    for (const agent of AGENTS) {
+      if (agent.id === selectedAgentId) continue;
+      const reaction = parsed[agent.id];
+      if (!reaction) continue;
+      const posture = typeof reaction.posture === 'string' ? reaction.posture.trim().slice(0, 10) : '';
+      const comment = typeof reaction.comment === 'string' ? reaction.comment.trim().slice(0, 40) : '';
+      if (posture && comment) valid[agent.id] = { posture, comment };
+    }
+    return valid;
+  } catch {
+    return {};
+  }
+};
+
 export const generateMockReactions = async (selectedAgentId: AgentId): Promise<Partial<Record<AgentId, Reaction>>> => {
+  const otherAgents = AGENTS.filter(agent => agent.id !== selectedAgentId);
+  const gemini = await callGeminiApi({
+    model: GEMINI_REACTIONS_MODEL,
+    jsonMode: true,
+    systemInstruction: compactLines([
+      'あなたは「じぶん会議」のOTHERS生成器です。選ばれなかった4人の短い反応だけをJSONで返してください。',
+      '選ばれた本人は含めない。master/心の鏡も含めない。',
+      '各値は posture と comment を持つ。postureは5文字程度、commentは15〜25文字程度。',
+      '余計な説明やMarkdownを出さず、JSONオブジェクトのみ返す。',
+    ]),
+    prompt: compactLines([
+      `選ばれたエージェント: ${selectedAgentId}`,
+      `出力対象: ${otherAgents.map(agent => `${agent.id}:${agent.name}:${agent.role}`).join(' / ')}`,
+      '形式例: {"soul":{"posture":"静観","comment":"まだ奥に声がある"}}',
+    ]),
+  });
+
+  if (gemini.ok) {
+    const parsed = parseGeminiReactions(gemini.text, selectedAgentId);
+    if (Object.keys(parsed).length > 0) return parsed;
+  }
+
   await wait(120);
   return buildOthersReactions(selectedAgentId, `${selectedAgentId}-${Date.now()}`);
 };
