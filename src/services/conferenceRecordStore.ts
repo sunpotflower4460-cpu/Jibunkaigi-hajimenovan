@@ -79,6 +79,14 @@ export const saveConferenceRecords = (records: ConferenceRecord[]) => {
   }
 };
 
+export const clearConferenceRecords = () => {
+  try {
+    localStorage.removeItem(RECORDS_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear conference records', error);
+  }
+};
+
 export const upsertConferenceRecord = (record: ConferenceRecord) => {
   const records = loadConferenceRecords();
   return saveConferenceRecords([record, ...records.filter(item => item.id !== record.id)].slice(0, MAX_RECORDS));
