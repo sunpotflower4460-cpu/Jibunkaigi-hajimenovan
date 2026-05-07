@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Cloud, CloudOff, CreditCard, Database, KeyRound, Loader2, Megaphone, RotateCcw, Settings, ShieldCheck, Trash2, X } from 'lucide-react';
 import { deleteCloudDataAndDisableSync, getCloudSaveSnapshot, isCloudSaveConfigured, resumeCloudSync, subscribeCloudSaveStatus, type CloudSaveSnapshot } from '../services/cloud/firebaseCloud';
+import { clearConferenceRecords } from '../services/conferenceRecordStore';
 import { callGeminiApi } from '../services/geminiApiClient';
+import { clearStickyNotes } from '../services/stickyNoteStore';
+import { clearLocalState } from '../services/storage';
 import { subscribeCloseDivePanels, subscribeDiveTool } from '../utils/diveTools';
 
 const statusLabel = (snapshot: CloudSaveSnapshot) => {
@@ -37,6 +40,12 @@ type CloudDeleteState =
   | { status: 'resuming'; message: string }
   | { status: 'error'; message: string };
 
+type LocalDeleteState =
+  | { status: 'idle'; message: string }
+  | { status: 'deleting'; message: string }
+  | { status: 'deleted'; message: string }
+  | { status: 'error'; message: string };
+
 const aiBadgeLabel = (state: AiTestState) => {
   if (state.status === 'connected') return '接続OK';
   if (state.status === 'missing') return '未設定';
@@ -49,6 +58,13 @@ const cloudDeleteBadgeLabel = (state: CloudDeleteState) => {
   if (state.status === 'deleting') return '削除中';
   if (state.status === 'deleted') return '停止中';
   if (state.status === 'resuming') return '再開中';
+  if (state.status === 'error') return '要確認';
+  return '管理';
+};
+
+const localDeleteBadgeLabel = (state: LocalDeleteState) => {
+  if (state.status === 'deleting') return '削除中';
+  if (state.status === 'deleted') return '削除済み';
   if (state.status === 'error') return '要確認';
   return '管理';
 };
@@ -91,6 +107,11 @@ export const SettingsPanel = () => {
     message: 'クラウド保存を使う場合、ここからクラウド側の保存データ削除と同期停止を行えます。',
   });
   const [cloudDeleteChecked, setCloudDeleteChecked] = useState(false);
+  const [localDelete, setLocalDelete] = useState<LocalDeleteState>({
+    status: 'idle',
+    message: 'この端末に保存された会話・付箋・会議録・設定を削除できます。クラウド側のデータは別の削除ボタンで管理します。',
+  });
+  const [localDeleteChecked, setLocalDeleteChecked] = useState(false);
 
   useEffect(() => subscribeCloudSaveStatus(setSnapshot), []);
   useEffect(() => subscribeDiveTool('settings', () => setIsOpen(true)), []);
@@ -161,6 +182,24 @@ export const SettingsPanel = () => {
     });
   };
 
+  const deleteLocalData = async () => {
+    if (!localDeleteChecked || localDelete.status === 'deleting') return;
+    try {
+      setLocalDelete({ status: 'deleting', message: '端末内データを削除しています。' });
+      await clearLocalState();
+      clearStickyNotes();
+      clearConferenceRecords();
+      setLocalDeleteChecked(false);
+      setLocalDelete({ status: 'deleted', message: '端末内データを削除しました。画面を再読み込みします。' });
+      window.setTimeout(() => window.location.reload(), 700);
+    } catch (error) {
+      setLocalDelete({
+        status: 'error',
+        message: error instanceof Error ? error.message : '端末内データの削除に失敗しました。',
+      });
+    }
+  };
+
   return (
     <>
       <button
@@ -213,6 +252,35 @@ export const SettingsPanel = () => {
                 description={cloudDescription}
                 badge={cloudConfigured ? '設定あり' : '未設定'}
               />
+
+              <SettingRow
+                icon={<Trash2 size={16} />}
+                title="端末内データ削除"
+                description="この端末に保存された会話・付箋・会議録・設定を削除します。クラウド側の保存データはこの操作だけでは削除されません。"
+                badge={localDeleteBadgeLabel(localDelete)}
+              >
+                <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-3">
+                  <p className="mb-3 text-[11px] font-bold leading-relaxed text-amber-800">{localDelete.message}</p>
+                  <label className="mb-3 flex items-start gap-2 rounded-xl bg-white/60 p-3 text-[11px] font-bold leading-relaxed text-amber-800">
+                    <input
+                      type="checkbox"
+                      checked={localDeleteChecked}
+                      onChange={event => setLocalDeleteChecked(event.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>この端末内の会話・付箋・会議録・設定を削除することを理解しました。</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => void deleteLocalData()}
+                    disabled={!localDeleteChecked || localDelete.status === 'deleting'}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-600 px-4 py-3 text-[11px] font-black text-white shadow-lg transition active:scale-[0.98] disabled:opacity-40"
+                  >
+                    {localDelete.status === 'deleting' ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    端末内データを削除
+                  </button>
+                </div>
+              </SettingRow>
 
               <SettingRow
                 icon={<Trash2 size={16} />}
