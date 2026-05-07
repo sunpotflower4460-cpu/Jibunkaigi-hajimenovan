@@ -78,6 +78,14 @@ export const saveStickyNotes = (notes: StickyNote[]) => {
   }
 };
 
+export const clearStickyNotes = () => {
+  try {
+    localStorage.removeItem(STICKY_NOTES_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear sticky notes', error);
+  }
+};
+
 export const createStickyNote = ({
   sessionId,
   kind,
