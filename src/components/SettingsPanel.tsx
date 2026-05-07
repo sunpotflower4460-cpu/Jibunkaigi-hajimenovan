@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, Cloud, CloudOff, CreditCard, Database, KeyRound, Megaphone, Settings, ShieldCheck, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Cloud, CloudOff, CreditCard, Database, KeyRound, Loader2, Megaphone, Settings, ShieldCheck, X } from 'lucide-react';
 import { getCloudSaveSnapshot, isCloudSaveConfigured, subscribeCloudSaveStatus, type CloudSaveSnapshot } from '../services/cloud/firebaseCloud';
+import { callGeminiApi } from '../services/geminiApiClient';
 import { subscribeCloseDivePanels, subscribeDiveTool } from '../utils/diveTools';
 
 const statusLabel = (snapshot: CloudSaveSnapshot) => {
@@ -22,16 +23,33 @@ const statusLabel = (snapshot: CloudSaveSnapshot) => {
   }
 };
 
+type AiTestState =
+  | { status: 'idle'; message: string }
+  | { status: 'testing'; message: string }
+  | { status: 'connected'; message: string }
+  | { status: 'missing'; message: string }
+  | { status: 'error'; message: string };
+
+const aiBadgeLabel = (state: AiTestState) => {
+  if (state.status === 'connected') return '接続OK';
+  if (state.status === 'missing') return '未設定';
+  if (state.status === 'error') return '要確認';
+  if (state.status === 'testing') return '確認中';
+  return '未確認';
+};
+
 const SettingRow = ({
   icon,
   title,
   description,
   badge,
+  children,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
   badge?: string;
+  children?: React.ReactNode;
 }) => (
   <div className="rounded-2xl border border-white/60 bg-white/55 p-4 shadow-sm">
     <div className="mb-2 flex items-center justify-between gap-3">
@@ -42,12 +60,17 @@ const SettingRow = ({
       {badge && <span className="shrink-0 rounded-full bg-slate-900 px-2.5 py-1 text-[9px] font-black text-white">{badge}</span>}
     </div>
     <p className="text-xs font-bold leading-relaxed text-slate-500">{description}</p>
+    {children && <div className="mt-3">{children}</div>}
   </div>
 );
 
 export const SettingsPanel = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [snapshot, setSnapshot] = useState<CloudSaveSnapshot>(() => getCloudSaveSnapshot());
+  const [aiTest, setAiTest] = useState<AiTestState>({
+    status: 'idle',
+    message: 'まだ接続確認をしていません。',
+  });
 
   useEffect(() => subscribeCloudSaveStatus(setSnapshot), []);
   useEffect(() => subscribeDiveTool('settings', () => setIsOpen(true)), []);
@@ -65,6 +88,35 @@ export const SettingsPanel = () => {
   const cloudDescription = cloudConfigured
     ? 'Firebase設定が見つかっています。匿名ログイン後、Firestoreへのクラウド保存を試みます。'
     : 'Firebase環境変数が未設定のため、現在は端末内保存のみです。設定後にクラウド保存へ切り替わります。';
+
+  const testAiConnection = async () => {
+    setAiTest({ status: 'testing', message: 'Gemini APIへの接続を確認しています。' });
+    const result = await callGeminiApi({
+      prompt: '接続確認です。日本語で短く「接続できています」と返してください。',
+      systemInstruction: 'あなたは接続確認用の応答だけを返します。説明は不要です。',
+    });
+
+    if (result.ok) {
+      setAiTest({
+        status: 'connected',
+        message: `接続できています。応答: ${result.text.slice(0, 60)}`,
+      });
+      return;
+    }
+
+    if (result.code === 'GEMINI_API_KEY_MISSING') {
+      setAiTest({
+        status: 'missing',
+        message: 'サーバー側の GEMINI_API_KEY が未設定です。未設定でもローカル応答に戻るため、アプリ自体は動きます。',
+      });
+      return;
+    }
+
+    setAiTest({
+      status: 'error',
+      message: `接続確認に失敗しました。${result.code}${result.status ? ` / status ${result.status}` : ''}`,
+    });
+  };
 
   return (
     <>
@@ -120,11 +172,24 @@ export const SettingsPanel = () => {
               />
 
               <SettingRow
-                icon={<KeyRound size={16} />}
+                icon={aiTest.status === 'connected' ? <CheckCircle2 size={16} /> : aiTest.status === 'testing' ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
                 title="AI API接続"
-                description="APIキーをアプリ内へ直接入れず、サーバー経由で安全に接続します。接続状態はここに表示されます。"
-                badge="準備中"
-              />
+                description="APIキーをアプリ内へ直接入れず、サーバー経由で安全に接続します。未設定時はローカル応答に戻ります。"
+                badge={aiBadgeLabel(aiTest)}
+              >
+                <div className="rounded-2xl bg-white/55 p-3">
+                  <p className="mb-3 text-[11px] font-bold leading-relaxed text-slate-500">{aiTest.message}</p>
+                  <button
+                    type="button"
+                    onClick={() => void testAiConnection()}
+                    disabled={aiTest.status === 'testing'}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-[11px] font-black text-white shadow-lg transition active:scale-[0.98] disabled:opacity-45"
+                  >
+                    {aiTest.status === 'testing' ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />}
+                    AI接続を確認する
+                  </button>
+                </div>
+              </SettingRow>
 
               <SettingRow
                 icon={<Megaphone size={16} />}
