@@ -9,6 +9,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { FloatingKeywordsPanel } from './components/FloatingKeywordsPanel';
 import { IntroLegalSoftener } from './components/IntroLegalSoftener';
 import { MirrorAtmosphere } from './components/MirrorAtmosphere';
+import { MirrorUxPolish } from './components/MirrorUxPolish';
 import { SettingsPanel } from './components/SettingsPanel';
 import { StickyNotesPanel } from './components/StickyNotesPanel';
 import { ThemeArchivePanel } from './components/ThemeArchivePanel';
@@ -20,6 +21,7 @@ import './index.css';
 import './dive-tools-accessibility.css';
 import './title-dolphin-presence.css';
 import './phase-2c-17-fixes.css';
+import './mirror-ux-polish.css';
 
 installPageAutoScroll();
 
@@ -35,6 +37,7 @@ const renderApp = () => {
     <React.StrictMode>
       <ErrorBoundary>
         <MirrorAtmosphere />
+        <MirrorUxPolish />
         <TitleDolphinPresence />
         <AppStable />
         <IntroLegalSoftener />

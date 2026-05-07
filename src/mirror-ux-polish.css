@@ -1,0 +1,118 @@
+.mirror-ux-polish {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 18;
+  opacity: 1;
+  transition: opacity 220ms ease;
+}
+
+.mirror-ux-orb {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: min(46rem, 86vw);
+  height: min(46rem, 86vw);
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.32), transparent 28%),
+    radial-gradient(circle at 50% 50%, rgba(129, 140, 248, 0.10), transparent 48%),
+    radial-gradient(circle at 50% 50%, transparent 58%, rgba(255, 255, 255, 0.18) 59%, transparent 61%);
+  filter: blur(0.2px);
+  opacity: 0.58;
+  animation: mirror-orb-breathe 13s ease-in-out infinite;
+}
+
+.mirror-ux-cue {
+  position: fixed;
+  left: 50%;
+  top: calc(4.7rem + env(safe-area-inset-top));
+  display: flex;
+  max-width: min(34rem, calc(100vw - 2rem));
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.42);
+  padding: 0.45rem 0.72rem;
+  color: rgba(71, 85, 105, 0.72);
+  box-shadow:
+    0 10px 36px rgba(148, 163, 184, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.54);
+  backdrop-filter: blur(18px);
+  white-space: nowrap;
+}
+
+.mirror-ux-cue-icon {
+  display: inline-flex;
+  color: rgba(99, 102, 241, 0.62);
+}
+
+.mirror-ux-cue-main {
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+}
+
+.mirror-ux-cue-divider {
+  width: 0.22rem;
+  height: 0.22rem;
+  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.46);
+}
+
+.mirror-ux-cue-detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: rgba(100, 116, 139, 0.62);
+}
+
+html[data-dive-dialog-open="true"] .mirror-ux-polish,
+body[data-dive-dialog-open="true"] .mirror-ux-polish {
+  opacity: 0;
+}
+
+@keyframes mirror-orb-breathe {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(0.96);
+    opacity: 0.42;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.04);
+    opacity: 0.64;
+  }
+}
+
+@media (max-width: 640px) {
+  .mirror-ux-orb {
+    top: 49%;
+    width: 92vw;
+    height: 92vw;
+    opacity: 0.42;
+  }
+
+  .mirror-ux-cue {
+    top: calc(4.45rem + env(safe-area-inset-top));
+    max-width: calc(100vw - 1.2rem);
+    padding: 0.38rem 0.58rem;
+  }
+
+  .mirror-ux-cue-main {
+    font-size: 0.62rem;
+  }
+
+  .mirror-ux-cue-detail {
+    max-width: 9.2rem;
+    font-size: 0.56rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mirror-ux-orb {
+    animation: none;
+  }
+}
