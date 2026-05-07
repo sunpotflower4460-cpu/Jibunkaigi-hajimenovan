@@ -18,6 +18,7 @@
 - GitHub Actions CI（typecheck / build）
 - Vercel 用設定
 - Cloudflare Workers Previewでも確認可能
+- Gemini API本接続用のサーバー側受け皿 `/api/gemini`
 
 **現在の起動正本は `AppStable.tsx` です。**（`App.tsx` は旧版/退避用）
 
@@ -91,14 +92,25 @@ Firebase環境変数が設定されている場合だけ、匿名ログインと
 - OTHERSの整合性修正
 - 保存/旧データ耐性の強化
 
+## Phase 3A: Gemini API本接続の土台
+
+Phase 3Aでは、Gemini APIキーをブラウザへ出さないためのサーバー側受け皿を追加しています。
+
+- `/api/gemini` を追加
+- `GEMINI_API_KEY` はサーバー側環境変数だけで読む
+- `VITE_GEMINI_API_KEY` は使わない
+- フロント用クライアント `src/services/geminiApiClient.ts` を追加
+- 未設定時は `GEMINI_API_KEY_MISSING` を返す
+- 手動設定手順は `docs/gemini-api-manual-setup.md`
+
+このPhaseでは、まだ5人のエージェント応答・心の鏡・OTHERSには接続していません。次のPhaseで接続します。
+
 ## 初期版でまだ入れないこと
 
 - ログインUI
 - 課金
 - App Store 提出
 - Node-AI-Z / AETERNA 接続
-
-生成AIへの本接続は、App Store申請前の別Phaseで安全に入れる予定です。APIキーはブラウザ側コードへ置かず、サーバー側経由にします。
 
 ## 開発コマンド
 
