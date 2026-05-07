@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2, Cloud, CloudOff, CreditCard, Database, KeyRound, Loader2, Megaphone, Settings, ShieldCheck, X } from 'lucide-react';
-import { getCloudSaveSnapshot, isCloudSaveConfigured, subscribeCloudSaveStatus, type CloudSaveSnapshot } from '../services/cloud/firebaseCloud';
+import { AlertCircle, CheckCircle2, Cloud, CloudOff, CreditCard, Database, KeyRound, Loader2, Megaphone, RotateCcw, Settings, ShieldCheck, Trash2, X } from 'lucide-react';
+import { deleteCloudDataAndDisableSync, getCloudSaveSnapshot, isCloudSaveConfigured, resumeCloudSync, subscribeCloudSaveStatus, type CloudSaveSnapshot } from '../services/cloud/firebaseCloud';
 import { callGeminiApi } from '../services/geminiApiClient';
 import { subscribeCloseDivePanels, subscribeDiveTool } from '../utils/diveTools';
 
@@ -30,12 +30,27 @@ type AiTestState =
   | { status: 'missing'; message: string }
   | { status: 'error'; message: string };
 
+type CloudDeleteState =
+  | { status: 'idle'; message: string }
+  | { status: 'deleting'; message: string }
+  | { status: 'deleted'; message: string }
+  | { status: 'resuming'; message: string }
+  | { status: 'error'; message: string };
+
 const aiBadgeLabel = (state: AiTestState) => {
   if (state.status === 'connected') return '接続OK';
   if (state.status === 'missing') return '未設定';
   if (state.status === 'error') return '要確認';
   if (state.status === 'testing') return '確認中';
   return '未確認';
+};
+
+const cloudDeleteBadgeLabel = (state: CloudDeleteState) => {
+  if (state.status === 'deleting') return '削除中';
+  if (state.status === 'deleted') return '停止中';
+  if (state.status === 'resuming') return '再開中';
+  if (state.status === 'error') return '要確認';
+  return '管理';
 };
 
 const SettingRow = ({
@@ -71,6 +86,11 @@ export const SettingsPanel = () => {
     status: 'idle',
     message: 'まだ接続確認をしていません。',
   });
+  const [cloudDelete, setCloudDelete] = useState<CloudDeleteState>({
+    status: 'idle',
+    message: 'クラウド保存を使う場合、ここからクラウド側の保存データ削除と同期停止を行えます。',
+  });
+  const [cloudDeleteChecked, setCloudDeleteChecked] = useState(false);
 
   useEffect(() => subscribeCloudSaveStatus(setSnapshot), []);
   useEffect(() => subscribeDiveTool('settings', () => setIsOpen(true)), []);
@@ -115,6 +135,29 @@ export const SettingsPanel = () => {
     setAiTest({
       status: 'error',
       message: `接続確認に失敗しました。${result.code}${result.status ? ` / status ${result.status}` : ''}`,
+    });
+  };
+
+  const deleteCloudData = async () => {
+    if (!cloudDeleteChecked || cloudDelete.status === 'deleting') return;
+    setCloudDelete({ status: 'deleting', message: 'クラウド保存データを削除し、同期停止を設定しています。' });
+    const result = await deleteCloudDataAndDisableSync();
+    setCloudDeleteChecked(false);
+    setCloudDelete({
+      status: result.ok ? 'deleted' : 'error',
+      message: result.message,
+    });
+  };
+
+  const restartCloudSync = async () => {
+    if (cloudDelete.status === 'resuming') return;
+    setCloudDelete({ status: 'resuming', message: 'クラウド同期を再開しています。' });
+    const nextSnapshot = await resumeCloudSync();
+    setCloudDelete({
+      status: nextSnapshot.status === 'error' ? 'error' : 'idle',
+      message: nextSnapshot.status === 'error'
+        ? nextSnapshot.errorMessage || 'クラウド同期の再開に失敗しました。'
+        : 'クラウド同期を再開しました。',
     });
   };
 
@@ -170,6 +213,46 @@ export const SettingsPanel = () => {
                 description={cloudDescription}
                 badge={cloudConfigured ? '設定あり' : '未設定'}
               />
+
+              <SettingRow
+                icon={<Trash2 size={16} />}
+                title="クラウドデータ削除"
+                description="クラウド側に保存された会話データを削除し、クラウド同期を停止します。端末内の会話データはこの操作だけでは削除されません。"
+                badge={cloudDeleteBadgeLabel(cloudDelete)}
+              >
+                <div className="rounded-2xl border border-rose-100 bg-rose-50/65 p-3">
+                  <p className="mb-3 text-[11px] font-bold leading-relaxed text-rose-700">{cloudDelete.message}</p>
+                  <label className="mb-3 flex items-start gap-2 rounded-xl bg-white/60 p-3 text-[11px] font-bold leading-relaxed text-rose-700">
+                    <input
+                      type="checkbox"
+                      checked={cloudDeleteChecked}
+                      onChange={event => setCloudDeleteChecked(event.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>クラウド保存データの削除と同期停止を行うことを理解しました。</span>
+                  </label>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => void deleteCloudData()}
+                      disabled={!cloudDeleteChecked || cloudDelete.status === 'deleting'}
+                      className="flex items-center justify-center gap-2 rounded-2xl bg-rose-600 px-4 py-3 text-[11px] font-black text-white shadow-lg transition active:scale-[0.98] disabled:opacity-40"
+                    >
+                      {cloudDelete.status === 'deleting' ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                      クラウド削除
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void restartCloudSync()}
+                      disabled={cloudDelete.status === 'deleting' || cloudDelete.status === 'resuming'}
+                      className="flex items-center justify-center gap-2 rounded-2xl bg-white/80 px-4 py-3 text-[11px] font-black text-slate-600 shadow-sm transition active:scale-[0.98] disabled:opacity-40"
+                    >
+                      {cloudDelete.status === 'resuming' ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                      同期再開
+                    </button>
+                  </div>
+                </div>
+              </SettingRow>
 
               <SettingRow
                 icon={aiTest.status === 'connected' ? <CheckCircle2 size={16} /> : aiTest.status === 'testing' ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
